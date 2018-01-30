@@ -1,7 +1,5 @@
 import numpy as np
 import emcee
-import corner
-# import pymc3 as pm
 from collections import OrderedDict
 from chainconsumer import ChainConsumer
 
@@ -32,8 +30,17 @@ def align_coords(xin, yin, pars, revert=False):
 
 
 def deflections(xin, yin, pars):
-    xsource, ysource, theta, b, q = pars
+    xsource, ysource = pars[0], pars[1]
+
     x, y = align_coords(xin, yin, pars, revert=False)
+    xout, yout = sie_model(x, y, pars)
+    x, y = align_coords(xout, yout, pars, revert=True)
+
+    return x - xsource, y - ysource
+
+
+def sie_model(x, y, pars):
+    xsource, ysource, theta, b, q = pars
 
     r = np.sqrt(x ** 2 + y ** 2)
     if q == 1.:
@@ -43,9 +50,8 @@ def deflections(xin, yin, pars):
     xout = b * np.arcsinh(eps * y / q / r) * np.sqrt(q) / eps
     yout = b * np.arcsin(eps * -x / r) * np.sqrt(q) / eps
     xout, yout = -yout, xout
-    x, y = align_coords(xout, yout, pars, revert=True)
 
-    return x - xsource, y - ysource
+    return xout, yout
 
 
 def pred_positions(x_img, y_img, pars):
@@ -81,10 +87,9 @@ def lnprob(pars):
     return lp + lnlike(pars)
 
 
-ndim, nwalkers = 5, 1000
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
+ndim, nwalkers = 5, 100
 
-# p0 = [np.random.rand(ndim) for i in range(nwalkers)]
+# p0 = [100*np.random.rand(ndim) for i in range(nwalkers)]
 initial = OrderedDict()
 initial[r'$x_{source}$'] = np.random.uniform(low=50, high=60, size=nwalkers)
 initial[r'$y_{source}$'] = np.random.uniform(low=35, high=45, size=nwalkers)
@@ -93,8 +98,8 @@ initial[r'$b$'] = np.random.uniform(low=10, high=40, size=nwalkers)
 initial[r'$q$'] = np.random.uniform(low=0.2, high=1., size=nwalkers)
 p0 = np.transpose(list(initial.values()))
 
-
-pos, prob, state = sampler.run_mcmc(p0, 1000)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
+pos, prob, state = sampler.run_mcmc(p0, 300)
 
 samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
 print(sampler.chain[:, 1, 0])
@@ -111,7 +116,7 @@ centerPoint = (55.9040, 39.9600)
 c = ChainConsumer()
 c.add_chain(samples, parameters=list(initial.keys()))
 c.configure(summary=True, cloud=True)
-c.plotter.plot(filename='Figures/parameter_contours.png')
+c.plotter.plot(filename='Figures/parameter_contours.png', truth=truth)
 fig = c.plotter.plot_walks(truth=truth, convolve=100)
 fig.savefig('Figures/mcmc_walks.png')
 
