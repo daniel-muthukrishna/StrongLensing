@@ -16,15 +16,15 @@ def align_coords(xin, yin, pars, revert=False):
     xsource, ysource, theta, b, q = pars
 
     if revert is False:
-        X = xin - xsource  # xin and xsource are coords directly from the image
-        Y = yin - ysource  # yin and ysource are coords directly from the image
-        x = X * np.cos(theta) + Y * np.sin(theta)
-        y = Y * np.cos(theta) - X * np.sin(theta)
+        xmap = xin - xsource  # xin and xsource are coords directly from the image
+        ymap = yin - ysource  # yin and ysource are coords directly from the image
+        x = xmap * np.cos(theta) + ymap * np.sin(theta)
+        y = ymap * np.cos(theta) - xmap * np.sin(theta)
     else:
-        X = xin * np.cos(theta) - yin * np.sin(theta)
-        Y = yin * np.cos(theta) + xin * np.sin(theta)
-        x = X + xsource
-        y = Y + ysource
+        xmap = xin * np.cos(theta) - yin * np.sin(theta)
+        ymap = yin * np.cos(theta) + xin * np.sin(theta)
+        x = xmap + xsource
+        y = ymap + ysource
 
     return x, y
 
@@ -59,8 +59,8 @@ def pred_positions(x_img, y_img, pars):
     x0, y0 = x_img.copy(), y_img.copy()
 
     xmap, ymap = deflections(x, y, pars)
-    x0 -= xmap
-    y0 -= ymap
+    x0 = x0 - xmap
+    y0 = y0 - ymap
 
     return x0, y0
 
@@ -87,7 +87,7 @@ def lnprob(pars):
     return lp + lnlike(pars)
 
 
-ndim, nwalkers = 5, 100
+ndim, nwalkers = 5, 2000
 
 # p0 = [100*np.random.rand(ndim) for i in range(nwalkers)]
 initial = OrderedDict()
@@ -99,7 +99,7 @@ initial[r'$q$'] = np.random.uniform(low=0.2, high=1., size=nwalkers)
 p0 = np.transpose(list(initial.values()))
 
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
-pos, prob, state = sampler.run_mcmc(p0, 300)
+pos, prob, state = sampler.run_mcmc(p0, 2000)
 
 samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
 print(sampler.chain[:, 1, 0])
