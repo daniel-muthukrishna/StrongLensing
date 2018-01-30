@@ -81,16 +81,16 @@ def lnprob(pars):
     return lp + lnlike(pars)
 
 
-ndim, nwalkers = 5, 500
+ndim, nwalkers = 5, 1000
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
 
 # p0 = [np.random.rand(ndim) for i in range(nwalkers)]
 initial = OrderedDict()
-initial['x_source'] = np.random.uniform(low=50, high=60, size=nwalkers)
-initial['y_source'] = np.random.uniform(low=35, high=45, size=nwalkers)
-initial['theta'] = np.random.uniform(low=-np.pi, high=np.pi, size=nwalkers)
-initial['b'] = np.random.uniform(low=10, high=40, size=nwalkers)
-initial['q'] = np.random.uniform(low=0.2, high=1., size=nwalkers)
+initial[r'$x_{source}$'] = np.random.uniform(low=50, high=60, size=nwalkers)
+initial[r'$y_{source}$'] = np.random.uniform(low=35, high=45, size=nwalkers)
+initial[r'$\theta$'] = np.random.uniform(low=-np.pi, high=np.pi, size=nwalkers)
+initial[r'$b$'] = np.random.uniform(low=10, high=40, size=nwalkers)
+initial[r'$q$'] = np.random.uniform(low=0.2, high=1., size=nwalkers)
 p0 = np.transpose(list(initial.values()))
 
 
@@ -101,8 +101,17 @@ print(sampler.chain[:, 1, 0])
 samples = sampler.flatchain
 print(samples.shape)
 
+samples_exp = samples.copy()
+samples_exp[:, 2] = np.exp(samples_exp[:, 2])
+bestfits = list(map(lambda v: (v[1]), zip(*np.percentile(samples_exp, [16, 50, 84], axis=0))))
+truth = dict(zip(initial.keys(), bestfits))
+
 centerPoint = (55.9040, 39.9600)
 
 c = ChainConsumer()
 c.add_chain(samples, parameters=list(initial.keys()))
-c.plotter.plot(filename='parameter_contours.png')
+c.configure(summary=True, cloud=True)
+c.plotter.plot(filename='Figures/parameter_contours.png')
+fig = c.plotter.plot_walks(truth=truth, convolve=100)
+fig.savefig('Figures/mcmc_walks.png')
+
