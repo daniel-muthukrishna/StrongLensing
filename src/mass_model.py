@@ -1,11 +1,6 @@
 import numpy as np
 
 
-def get_image_positions(x_img, y_img):
-    """ Input image positions here. May rewrite to read positions directly from the sextractor file. """
-
-    return x_img, y_img
-
 
 def align_coords(x_in, y_in, pars, revert=False):
     """ Change input coordinates (xin, yin) to be relative to the source (xmap, ymap) and then realign using theta. """
@@ -70,13 +65,28 @@ def pred_positions(x_img, y_img, pars):
 def lnlike(pars, x_img, y_img):
     """ Calculate log-likelihood probability. Minimise the variance in the source position from all images. """
     if isinstance(x_img, dict):
-        for key in x_img.items():
-            pass
+        x_src, y_src = {}, {}
+        pars_dict = {}
+        lnlike_dict = {}
 
-    x_img, y_img = get_image_positions(x_img, y_img)
-    x_src, y_src = pred_positions(x_img, y_img, pars)
+        xsource_A, ysource_A, theta_A, xsource_11, ysource_11, theta_11, xsource_62, ysource_62, theta_62, \
+        xsource_41, ysource_41, theta_41, xsource_31, ysource_31, theta_31, b, q = pars
+        pars_dict['A'] = xsource_A, ysource_A, theta_A, b, q
+        pars_dict['11'] = xsource_11, ysource_11, theta_11, b, q
+        pars_dict['62'] = xsource_62, ysource_62, theta_62, b, q
+        pars_dict['41'] = xsource_41, ysource_41, theta_41, b, q
+        pars_dict['31'] = xsource_31, ysource_31, theta_A, b, q
 
-    return -0.5 * (x_src.var() + y_src.var())
+        for key in x_img:
+            x_src[key], y_src[key] = pred_positions(x_img[key], y_img[key], pars_dict[key])
+            lnlike_dict[key] = -0.5 * (x_src[key].var() + y_src[key].var())
+
+        return sum(lnlike_dict.values())
+
+    else:
+        x_src, y_src = pred_positions(x_img, y_img, pars)
+
+        return -0.5 * (x_src.var() + y_src.var())
 
 
 def lnprior(pars, prior_func=None):
@@ -102,10 +112,10 @@ def lnprob(pars, x_img, y_img, prior_func=None):
     return lp + lnlike(pars, x_img, y_img)
 
 
-if __name__ == '__main__':
-    xsource, ysource, theta, b, q = (53, 40.8, 1.55, 24.1, 0.954)
-    pars = (xsource, ysource, theta, b, q)
-    x_img, y_img = np.array([69.3759]), np.array([28.1791])
-    x_src, y_src = pred_positions(x_img, y_img, pars)
-
-    print(x_src, y_src)
+# if __name__ == '__main__':
+#     xsource, ysource, theta, b, q = (53, 40.8, 1.55, 24.1, 0.954)
+#     pars = (xsource, ysource, theta, b, q)
+#     x_img, y_img = np.array([69.3759]), np.array([28.1791])
+#     x_src, y_src = pred_positions(x_img, y_img, pars)
+#
+#     print(x_src, y_src)
