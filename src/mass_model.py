@@ -69,6 +69,10 @@ def pred_positions(x_img, y_img, pars):
 
 def lnlike(pars, x_img, y_img):
     """ Calculate log-likelihood probability. Minimise the variance in the source position from all images. """
+    if isinstance(x_img, dict):
+        for key in x_img.items():
+            pass
+
     x_img, y_img = get_image_positions(x_img, y_img)
     x_src, y_src = pred_positions(x_img, y_img, pars)
 
