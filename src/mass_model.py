@@ -7,33 +7,35 @@ def get_image_positions(x_img, y_img):
     return x_img, y_img
 
 
-def align_coords(xin, yin, pars, revert=False):
+def align_coords(x_in, y_in, pars, revert=False):
     """ Change input coordinates (xin, yin) to be relative to the source (xmap, ymap) and then realign using theta. """
     xsource, ysource, theta, b, q = pars
 
     if revert is False:
-        xmap = xin - xsource  # xin and xsource are coords directly from the image
-        ymap = yin - ysource  # yin and ysource are coords directly from the image
-        x = xmap * np.cos(theta) + ymap * np.sin(theta)
+        xmap = x_in - xsource  # xmap is the image position wrt to Xsource at (0,0) in image plane
+        ymap = y_in - ysource
+        x = xmap * np.cos(theta) + ymap * np.sin(theta)  # Rotates coordinates from image plane to source plane
         y = ymap * np.cos(theta) - xmap * np.sin(theta)
     else:
-        xmap = xin * np.cos(theta) - yin * np.sin(theta)
-        ymap = yin * np.cos(theta) + xin * np.sin(theta)
-        x = xmap + xsource
+        xmap = x_in * np.cos(theta) - y_in * np.sin(theta)  # Rotates coordinates from source plane to image plane (Xsource is still at Origin)
+        ymap = y_in * np.cos(theta) + x_in * np.sin(theta)
+        x = xmap + xsource  # x is the deflection position but
         y = ymap + ysource
 
     return x, y
 
 
-def deflections(xin, yin, pars):
+def deflections(x_img, y_img, pars):
     """ Calculate deflection using a mass model. Returns the calculated source positions. """
     xsource, ysource = pars[0], pars[1]
 
-    x, y = align_coords(xin, yin, pars, revert=False)
-    xout, yout = sie_model(x, y, pars)
-    x, y = align_coords(xout, yout, pars, revert=True)
+    x, y = align_coords(x_img, y_img, pars, revert=False)  # Image positions rotated to source plane coordinates (wrt Xsource at (0,0))
+    xout, yout = sie_model(x, y, pars)  # Calculated deflection positions in source plane coordinates
+    x, y = align_coords(xout, yout, pars, revert=True)  # Calculated deflection positions in image plane coordinates (wrt Xsource at (0,0))
 
-    return x - xsource, y - ysource
+    x_deflect, y_deflect = x - xsource, y - ysource  # Calculated deflection positions in image plane coordinates (actual pixel positions instead of wrt Xsource)
+
+    return x_deflect, y_deflect
 
 
 def sie_model(x, y, pars):
@@ -57,11 +59,12 @@ def pred_positions(x_img, y_img, pars):
     x, y = x_img.copy(), y_img.copy()
     x0, y0 = x_img.copy(), y_img.copy()
 
-    xmap, ymap = deflections(x, y, pars)
-    x0 = x0 - xmap
-    y0 = y0 - ymap
+    x_deflect, y_deflect = deflections(x, y, pars)  # Calculated deflection positions in image plane coordinates (pixel positions)
+    x_src = x0 - x_deflect  # Calculated source positions in pixels
+    y_src = y0 - y_deflect
 
-    return x0, y0
+
+    return x_src, y_src
 
 
 def lnlike(pars, x_img, y_img):
@@ -72,18 +75,33 @@ def lnlike(pars, x_img, y_img):
     return -0.5 * (x_src.var() + y_src.var())
 
 
-def lnprior(pars):
+def lnprior(pars, prior_func=None):
     """ Log-prior for the parameters. """
-    xsource, ysource, theta, b, q = pars
-    if (-np.pi < theta < np.pi) and (0. < q < 1):
-        return 0.0
-    return -np.inf
+
+    if prior_func is None:
+        xsource, ysource, theta, b, q = pars
+
+        if (-np.pi < theta < np.pi) and (0. < q < 1):
+            return 0.0
+        return -np.inf
+
+    else:
+        return prior_func(pars)
 
 
-def lnprob(pars, x_img, y_img):
+def lnprob(pars, x_img, y_img, prior_func=None):
     """ Log-probability is the log-prior + log-likelihood. """
-    lp = lnprior(pars)
+    lp = lnprior(pars, prior_func)
 
     if not np.isfinite(lp):
         return -np.inf
     return lp + lnlike(pars, x_img, y_img)
+
+
+if __name__ == '__main__':
+    xsource, ysource, theta, b, q = (53, 40.8, 1.55, 24.1, 0.954)
+    pars = (xsource, ysource, theta, b, q)
+    x_img, y_img = np.array([69.3759]), np.array([28.1791])
+    x_src, y_src = pred_positions(x_img, y_img, pars)
+
+    print(x_src, y_src)
