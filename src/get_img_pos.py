@@ -1,169 +1,105 @@
 import os
+import sys
 import numpy as np
-import emcee
-from collections import OrderedDict
-from chainconsumer import ChainConsumer
-from src.mass_model import lnprob
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+import pymc
 
-""" Given source positions calculate what images are created """
+from mass_model import pred_positions
 
-
-def align_coords(x_in, y_in, pars, revert=False):
-    """ Change input coordinates (xin, yin) to be relative to the source (xmap, ymap) and then realign using theta. """
-    ximage, yimage, theta, b, q = pars
-
-    if revert is False:
-        xmap = ximage - x_in  # xmap is the image position wrt to Xsource at (0,0) in image plane
-        ymap = yimage - y_in
-        x = xmap * np.cos(theta) + ymap * np.sin(theta)  # Rotates coordinates from image plane to source plane
-        y = ymap * np.cos(theta) - xmap * np.sin(theta)
-    else:
-        xmap = x_in * np.cos(theta) - y_in * np.sin(theta)  # Rotates coordinates from source plane to image plane (Xsource is still at Origin)
-        ymap = y_in * np.cos(theta) + x_in * np.sin(theta)
-        x = xmap + ximage  # x is the deflection position but
-        y = ymap + yimage
-
-    return x, y
+sys.path.insert(0, '/Users/danmuth/PycharmProjects/StrongLensing/Matts_scripts')
+from pylens import pylens, MassModels
+from imageSim import SBObjects
 
 
-def deflections(x_src, y_src, pars):
-    """ Calculate deflection using a mass model. Returns the calculated source positions. """
-    ximage, yimage = pars[0], pars[1]
+def get_quasar_img_pos():
 
-    x, y = align_coords(x_src, y_src, pars, revert=False)  # Source positions rotated to source plane coordinates (wrt Xsource at (0,0))
-    xout, yout = sie_model(x, y, pars)  # Calculated deflection positions in source plane coordinates
-    x, y = align_coords(xout, yout, pars, revert=True)  # Calculated deflection positions in image plane coordinates (wrt Xsource at (0,0))
+    # Define source positions as a Guassian surface brightness profile
+    X1 = pymc.Uniform('X1', 50., 60., value=54.83)
+    Y1 = pymc.Uniform('Y1', 35., 45., value=38.98)
+    R1 = pymc.Uniform('R1', 0., 20., value=3.95)
+    Q1 = pymc.Uniform('Q1', 0.2, 1., value=0.8)
+    P1 = pymc.Uniform('P1', -180., 180., value=54.)
+    S1 = pymc.Uniform('N1', 0.6, 6., value=1.3)
+    src = SBObjects.Gauss('', {'x':X1,'y':Y1,'q':Q1,'pa':P1,'sigma':S1})
+    srcs = [src]
 
-    x_deflect, y_deflect = x - ximage, y - yimage  # Calculated deflection positions in image plane coordinates (actual pixel positions instead of wrt Xsource)
+    # Define lens mass model
+    LX = pymc.Uniform('lx', 50., 60., value=54.83)
+    LY = pymc.Uniform('ly', 35., 45., value=38.98)
+    LB = pymc.Uniform('lb', 10., 40., value=20.)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=0.8)
+    LP = pymc.Uniform('lp', -180., 180., value=110.)
+    XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
+    XP = pymc.Uniform('xp', -180., 180., value=0.)
+    lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
+    shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
+    lenses = [lens]
+    # # OR MY MODEL I have checked that they get the same answer
+    # x_lens, y_lens, theta, b, q = (51.5, 39.9, 1.1, 21.6, 1.0)
+    # pars = (x_lens, y_lens, theta, b, q)
 
-    return x_deflect, y_deflect
+    x, y = np.meshgrid(np.arange(0, 100, 1.), np.arange(0, 100, 1.))
 
+    for lens in lenses:
+        lens.setPars()
+    x_src, y_src = pylens.getDeflections(lenses, [x, y])
+    # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
 
-def sie_model(x, y, pars):
-    """ Singular Isothermal Elliptical Mass model for lens. Returns the calculated image positions. """
-    ximage, yimage, theta, b, q = pars
+    image_plane = src.pixeval(x_src, y_src)
+    plt.imshow(image_plane, interpolation='nearest', origin='lower')
 
-    r = np.sqrt(x ** 2 + y ** 2)
-    if q == 1.:
-        q = 1.-1e-7  # Avoid divide-by-zero errors
-    eps = np.sqrt(1. - q ** 2)
+    print(pylens.getImgPos(x0=0, y0=0, b=21.6, sx=54.83, sy=38.98, lenses=lenses))
 
-    xout = -np.sinh(y * eps / b / np.sqrt(q)) * r / eps
-    yout = np.sinh(x * eps / b / np.sqrt(q)) * r * q / eps
-    xout, yout = yout, -xout
+    plt.show()
 
-    if xout == np.inf:
-        xout = 1e99
-    elif xout == -np.inf:
-        xout = -1e99
-    if yout == np.inf:
-        yout = 1e99
-    elif yout == -np.inf:
-        yout = -1e99
+def get_macs0451_img_pos():
+    sa = (2000, 5000)  # search area
 
-    return xout, yout
+    # Define source positions as a Guassian surface brightness profile
+    X1 = pymc.Uniform('X1', 2000., 5000., value=3034)
+    Y1 = pymc.Uniform('Y1', 2000., 5000., value=3053)
+    # R1 = pymc.Uniform('R1', 0., 1000, value=1000)
+    Q1 = pymc.Uniform('Q1', 0.2, 1., value=0.8)
+    P1 = pymc.Uniform('P1', -180., 180., value=110.)
+    S1 = pymc.Uniform('N1', 0.6, 6., value=1.3)
+    src = SBObjects.Gauss('', {'x':X1,'y':Y1,'q':Q1,'pa':P1,'sigma':S1})
+    srcs = [src]
 
+    # Define lens mass model
+    LX = pymc.Uniform('lx', 2000., 5000., value=3034)
+    LY = pymc.Uniform('ly', 2000., 5000., value=3053)
+    LB = pymc.Uniform('lb', 10., 3000., value=950.)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=0.8)
+    LP = pymc.Uniform('lp', -180., 180., value=110.)
+    XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
+    XP = pymc.Uniform('xp', -180., 180., value=0.)
+    lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
+    shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
+    lenses = [lens, shear]
+    # # OR MY MODEL I have checked that they get the same answer
+    # x_lens, y_lens, theta, b, q = (3034, 3053, 1.1, 950, 1)
+    # pars = (x_lens, y_lens, theta, b, q)
 
-def pred_positions(x_src, y_src, pars):
-    """ Predict the image positions by calculating the deflection"""
-    x, y = x_src.copy(), y_src.copy()
-    x0, y0 = x_src.copy(), y_src.copy()
+    x, y = np.meshgrid(np.arange(sa[0], sa[1], 1.), np.arange(sa[0], sa[1], 1.))
 
-    x_deflect, y_deflect = deflections(x, y, pars)  # Calculated deflection positions in image plane coordinates (pixel positions)
-    x_img = x0 + x_deflect  # Calculated source positions in pixels
-    y_img = y0 + y_deflect
-
-    return x_img, y_img
-
-
-def lnlike(pars, x_src, y_src):
-    """ Calculate log-likelihood probability. Minimise the variance in the source position from all images. """
-    ximage, yimage, theta, b, q = pars
-    x_img_calc, y_img_calc = pred_positions(x_src, y_src, pars)
-
-    diffx = x_img_calc - ximage
-    diffy = y_img_calc - yimage
-
-    err = -0.5 * (diffx**2 + diffy**2)
-
-    if abs(diffx) < 0.05 and abs(diffy) < 0.05:
-        print(ximage, yimage, theta, b, q)
-
-    return err
-
-
-def lnprior(pars, prior_func=None):
-    """ Log-prior for the parameters. """
-
-    if prior_func is None:
-        ximage, yimage, theta, b, q = pars
-
-        if (0 < ximage < 100) and (0 < yimage < 100) and (10 < b < 40) and (-np.pi < theta < np.pi) and (0. < q < 1):
-            return 0.0
-        return -np.inf
-
-    else:
-        return prior_func(pars)
-
-
-def lnprob(pars, x_src, y_src, prior_func=None):
-    """ Log-probability is the log-prior + log-likelihood. """
-    lp = lnprior(pars, prior_func)
-
-    if not np.isfinite(lp):
-        return -np.inf
-    return lp + lnlike(pars, x_src, y_src)
-
-
-def run_mcmc(x_src, y_src, fig_dir, prior_func=None):
-
-    # MCMC setup
-    ndim, nwalkers = 5, 200
-
-    # Starting positions for the MCMC walkers sampled from a uniform distribution
-    initial = OrderedDict()
-    initial[r'$x_{image}$'] = np.random.uniform(low=0, high=100, size=nwalkers)
-    initial[r'$y_{image}$'] = np.random.uniform(low=0, high=100, size=nwalkers)
-    initial[r'$\theta$'] = np.random.uniform(low=-np.pi, high=np.pi, size=nwalkers)
-    initial[r'$b$'] = np.random.uniform(low=10, high=40, size=nwalkers)
-    initial[r'$q$'] = np.random.uniform(low=0.2, high=1., size=nwalkers)
-    p0 = np.transpose(list(initial.values()))
-
-    # Run MCMC sampler with emcee
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(x_src, y_src, prior_func))
-    pos, prob, state = sampler.run_mcmc(p0, 100)
-
-    # Print chain
-    samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
-    print(sampler.chain[:, 1, 0])
-    samples = sampler.flatchain
-    print(samples.shape)
-
-    # Get best fit parameters
-    samples_exp = samples.copy()
-    samples_exp[:, 2] = np.exp(samples_exp[:, 2])
-    best_fits = list(map(lambda v: (v[1]), zip(*np.percentile(samples_exp, [16, 50, 84], axis=0))))
-    truth = dict(zip(initial.keys(), best_fits))
-    print(truth)
-
-    # Plot parameter contours and mcmc chains
-    c = ChainConsumer()
-    c.add_chain(samples, parameters=list(initial.keys()))
-    c.configure(summary=True, cloud=True)
-    c.plotter.plot(filename=os.path.join(fig_dir, 'parameter_contours_imagePos.png'), truth=truth)
-    fig = c.plotter.plot_walks(truth=truth, convolve=100)
-    fig.savefig(os.path.join(fig_dir, 'mcmc_walks_imagePos.png'))
-
-
-if __name__ == '__main__':
-    # ximage, yimage, theta, b, q = (69.3759,  28.1791, 1.55, 24.1, 0.954)
-    # pars = (ximage, yimage, theta, b, q)
-    x_src, y_src = np.array([53]), np.array([40])
-    # x_img, y_img = pred_positions(x_src, y_src, pars)
+    for lens in lenses:
+        lens.setPars()
+    x_src, y_src = pylens.getDeflections(lenses, [x, y])
     #
-    # print(x_img, y_img)
+    # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
 
-    run_mcmc(x_src, y_src, fig_dir='/Users/danmuth/PycharmProjects/StrongLensing/Figures/lensed_quasar/')
+    image_plane = src.pixeval(x_src, y_src)
+    plt.imshow(image_plane, interpolation='nearest', origin='lower')
 
-    # plt.show()
+    # print(pylens.getImgPos(x0=0, y0=0, b=950, sx=3034, sy=3053, lenses=lenses))
+
+    # Get list of predicted image coordinates
+    image_coords_pred = np.add(np.where(image_plane>0.8), sa[0])
+
+    plt.show()
+
+
+if __name__=='__main__':
+    # get_quasar_img_pos()
+    get_macs0451_img_pos()
