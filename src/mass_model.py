@@ -43,8 +43,8 @@ def sie_model(x, y, d, pars):
         q = 1.-1e-7  # Avoid divide-by-zero errors
     eps = np.sqrt(1. - q ** 2)
 
-    xout = b * np.arcsinh(eps * y / q / r) * np.sqrt(q) / eps
-    yout = b * np.arcsin(eps * -x / r) * np.sqrt(q) / eps
+    xout = b * np.arcsinh(eps * y / q / r) * q**0.5 / eps
+    yout = b * np.arcsin(eps * -x / r) * q**0.5 / eps
     xout, yout = -yout, xout
 
     return xout, yout

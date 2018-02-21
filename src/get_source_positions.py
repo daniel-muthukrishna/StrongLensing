@@ -67,8 +67,8 @@ def lensed_quasar():
 
     # Starting positions for the MCMC walkers sampled from a uniform distribution
     initial = OrderedDict()
-    initial[r'$x_{source}$'] = np.random.uniform(low=40, high=70, size=nwalkers)
-    initial[r'$y_{source}$'] = np.random.uniform(low=30, high=50, size=nwalkers)
+    initial[r'$x_{lens}$'] = np.random.uniform(low=40, high=70, size=nwalkers)
+    initial[r'$y_{lens}$'] = np.random.uniform(low=30, high=50, size=nwalkers)
     initial[r'$\theta$'] = np.random.uniform(low=-np.pi, high=np.pi, size=nwalkers)
     initial[r'$b$'] = np.random.uniform(low=10, high=40, size=nwalkers)
     initial[r'$q$'] = np.random.uniform(low=0.2, high=1., size=nwalkers)
@@ -80,7 +80,7 @@ def lensed_quasar():
         else:
             return -np.inf
 
-    run_mcmc(x_img, y_img, fig_dir, nwalkers=nwalkers, steps=steps, prior_func=lnprior, initial_params=initial)
+    run_mcmc(x_img, y_img, fig_dir, d=1, nwalkers=nwalkers, steps=steps, prior_func=lnprior, initial_params=initial)
 
 
 def macs0451():
@@ -140,28 +140,28 @@ def macs0451_multiple_sources():
     ndim, nwalkers = 5, 1000
     steps = 2000
     img_name = '_multiple_sources2'
-    zl = 0.43
+    z_lens = 0.43
 
     x_img, y_img, d = {}, {}, {}
     x_img['A'] = np.array([2375.942110, 2378.5, 2379.816610, 2381.299088, 2384, 2385.927991, 2389.555816, 2457.694760, 2450.744242, 2442.833333, 2437.857924, 2433.064587, 2427.166666, 2424.099866, 2418.5, 2416.444081, 2462])
     y_img['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
-    d['A'] = scale_einstein_radius(zl=zl, zs=2.01)
+    d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
 
     x_img['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
     y_img['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
-    d['11'] = scale_einstein_radius(zl=zl, zs=2.06)
+    d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
 
-    # # x_img['62'] = np.array([3486.371962])
-    # # y_img['62'] = np.array([3069.305065])
-    # # d['62'] = scale_einstein_radius(zl=zl, zs=1.405)
-    #
-    # x_img['41'] = np.array([3222.796159, 3227.700108])
-    # y_img['41'] = np.array([3550.903781, 3542.180780])
-    # d['41'] = scale_einstein_radius(zl=zl, zs=1.810)
-    #
-    # x_img['31'] = np.array([2933.063074, 3393.715824])
-    # y_img['31'] = np.array([2943.400421, 3398.196336])
-    # d['31'] = scale_einstein_radius(zl=zl, zs=1.904)
+    # x_img['62'] = np.array([3486.371962])
+    # y_img['62'] = np.array([3069.305065])
+    # d['62'] = scale_einstein_radius(z_lens=z_lens, zs=1.405)
+
+    x_img['41'] = np.array([3222.796159, 3227.700108])
+    y_img['41'] = np.array([3550.903781, 3542.180780])
+    d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
+
+    x_img['31'] = np.array([2933.063074, 3393.715824])
+    y_img['31'] = np.array([2943.400421, 3398.196336])
+    d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
 
     # Starting positions for the MCMC walkers sampled from a uniform distribution
     initial = OrderedDict()
@@ -184,6 +184,6 @@ def macs0451_multiple_sources():
 
 
 if __name__ == '__main__':
-    # lensed_quasar()
+    lensed_quasar()
     # macs0451()
-    macs0451_multiple_sources()
+    # macs0451_multiple_sources()
