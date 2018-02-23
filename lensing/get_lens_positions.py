@@ -3,13 +3,13 @@ import numpy as np
 import emcee
 from collections import OrderedDict
 from chainconsumer import ChainConsumer
-from src.mass_model import lnprob
+from lensing.mass_model import lnprob
 import matplotlib.pyplot as plt
-from src.image_overplot_contours import plot_image
-from src.dist_ang import scale_einstein_radius
+from lensing.image_overplot_contours import plot_image
+from lensing.dist_ang import scale_einstein_radius
 
 
-def run_mcmc(x_img, y_img, fig_dir, d=None, ndim=5, nwalkers=100, steps=200, prior_func=None, initial_params=None, fits_file=None, img_name=''):
+def run_mcmc(x_img, y_img, fig_dir, d=None, ndim=5, nwalkers=100, nsteps=200, prior_func=None, initial_params=None, fits_file=None, img_name=''):
 
     # Starting positions for the MCMC walkers sampled from a uniform distribution
     if initial_params is None:
@@ -25,7 +25,7 @@ def run_mcmc(x_img, y_img, fig_dir, d=None, ndim=5, nwalkers=100, steps=200, pri
 
     # Run MCMC sampler with emcee
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(x_img, y_img, d, prior_func))
-    pos, prob, state = sampler.run_mcmc(p0, steps)
+    pos, prob, state = sampler.run_mcmc(p0, nsteps)
 
     # Print chain
     samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
@@ -63,7 +63,7 @@ def lensed_quasar():
     fig_dir = 'Figures/lensed_quasar/'
 
     ndim, nwalkers = 5, 1000
-    steps = 2000
+    n_steps = 2000
 
     # Starting positions for the MCMC walkers sampled from a uniform distribution
     initial = OrderedDict()
@@ -80,7 +80,7 @@ def lensed_quasar():
         else:
             return -np.inf
 
-    run_mcmc(x_img, y_img, fig_dir, d=1, nwalkers=nwalkers, steps=steps, prior_func=lnprior, initial_params=initial)
+    run_mcmc(x_img, y_img, fig_dir, d=1, nwalkers=nwalkers, nsteps=n_steps, prior_func=lnprior, initial_params=initial)
 
 
 def macs0451():
@@ -132,13 +132,13 @@ def macs0451():
 
     fits_file = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
 
-    run_mcmc(x_img, y_img, fig_dir, nwalkers=nwalkers, steps=steps, prior_func=lnprior, initial_params=initial, fits_file=fits_file, img_name=img_name)
+    run_mcmc(x_img, y_img, fig_dir, nwalkers=nwalkers, nsteps=steps, prior_func=lnprior, initial_params=initial, fits_file=fits_file, img_name=img_name)
 
 
 def macs0451_multiple_sources():
     fig_dir = 'Figures/MACS0451/'
-    ndim, nwalkers = 5, 1000
-    steps = 2000
+    ndim, nwalkers = 5, 100
+    nsteps = 200
     img_name = '_multiple_sources2'
     z_lens = 0.43
 
@@ -180,10 +180,10 @@ def macs0451_multiple_sources():
 
     fits_file = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
 
-    run_mcmc(x_img, y_img, fig_dir, d, ndim=ndim, nwalkers=nwalkers, steps=steps, prior_func=lnprior, initial_params=initial, fits_file=fits_file, img_name=img_name)
+    run_mcmc(x_img, y_img, fig_dir, d, ndim=ndim, nwalkers=nwalkers, nsteps=nsteps, prior_func=lnprior, initial_params=initial, fits_file=fits_file, img_name=img_name)
 
 
 if __name__ == '__main__':
-    lensed_quasar()
+    # lensed_quasar()
     # macs0451()
-    # macs0451_multiple_sources()
+    macs0451_multiple_sources()
