@@ -161,7 +161,7 @@ def get_macs0451_img_pos():
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 0
+    burn = 100
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
