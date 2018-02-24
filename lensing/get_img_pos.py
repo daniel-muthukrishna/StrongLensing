@@ -72,7 +72,6 @@ def get_macs0451_img_pos():
     srcs = [src]
     pars = [X1, Y1, Q1, P1, S1]  # List of parameters
     cov = [900, 900, 0.3, 50., 2]  # List of initial `scatter' for emcee
-    cov = np.array(cov)
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2000., 5000., value=3034)
@@ -85,17 +84,14 @@ def get_macs0451_img_pos():
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
-    # pars += [LX, LY, LB, LQ, LP]
+    pars += [LX, LY, LB, LQ, LP]
+    cov += [500, 500, 300, 0.3, 50]
+    cov = np.array(cov)
 
     x, y = np.meshgrid(np.arange(sa[0], sa[1], 1.), np.arange(sa[0], sa[1], 1.))
 
-    for lens in lenses:
-        lens.setPars()
-    x_src, y_src = pylens.getDeflections(lenses, [x, y])
-    print(x_src)
-
-    nwalkers = 50
-    nsteps = 300
+    nwalkers = 20
+    nsteps = 3
     z_lens = 0.43
 
     # Observed Image positions
@@ -110,6 +106,11 @@ def get_macs0451_img_pos():
 
         for src in srcs:
             src.setPars()
+
+        for lens in lenses:
+            lens.setPars()
+        x_src, y_src = pylens.getDeflections(lenses, [x, y])
+        print(x_src)
 
         image_plane = src.pixeval(x_src, y_src)
 
