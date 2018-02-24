@@ -9,7 +9,6 @@ from chainconsumer import ChainConsumer
 import pymc
 from dist_ang import scale_einstein_radius
 from mass_model import pred_positions
-sys.path.insert(0, '/Users/danmuth/PycharmProjects/StrongLensing/Matts_scripts')
 from pylens import pylens, MassModels
 from imageSim import SBObjects
 import myEmcee
@@ -92,7 +91,7 @@ def get_macs0451_img_pos():
     x_src, y_src = pylens.getDeflections(lenses, [x, y])
     print(x_src)
 
-    nwalkers = 100
+    nwalkers = 50
     nsteps = 200
     z_lens = 0.43
 
@@ -113,27 +112,33 @@ def get_macs0451_img_pos():
 
         # Get list of predicted image coordinates TODO: Change this to look for the center of each predicted image (i.e. when value is close to 1.0)
         image_coords_pred = np.add(np.where(image_plane > 0.8), sa[0])
-        new = []
-        i_prev, j_prev = 0, 0
-        for i, j in zip(*image_coords_pred):
-            if abs(i - i_prev) != 1 and abs(j - j_prev) != 1:
-                new.append([i, j])
-            i_prev, j_prev = i, j
-        image_coords_pred = np.array(zip(*new))
+
+        # Choose the central point
+        # new = []
+        # i_prev, j_prev = 0, 0
+        # for i, j in zip(*image_coords_pred):
+        #     if abs(i - i_prev) != 1 and abs(j - j_prev) != 1:
+        #         new.append([i, j])
+        #     i_prev, j_prev = i, j
+        # image_coords_pred = np.array(zip(*new))
+        print(image_coords_pred)
+
+        if not image_coords_pred.size: # If it's an empty list
+            return -1e20
 
         img_xpred, img_ypred = image_coords_pred
+
         img_xobs, img_yobs = x_img['A'], y_img['A']
-        obs_arg = []  # the predicited values used in the likelihood calculation because the positions actually are nearby the actual image positions
+        obs_arg = []  # the predicted values used in the likelihood calculation because the positions actually are nearby the actual image positions
         # Every obsimg needs to map to one predimg
         for xo, yo in zip(img_xobs, img_yobs):
             xdist = np.abs(img_xpred - xo)  # pixel distance between xobs and xpredicted
             ydist = np.abs(img_ypred - yo)
             dist = xdist + ydist
             obs_arg.append(np.argmin(dist))  # The index of the obs_img that the given predicted image is closest to
-        print(img_xpred)
         obs_arg = np.array(obs_arg)
 
-        img_xpred_compare = np.array([img_xpred[i] for i in obs_arg])  # these pred images are the ones that are being compared witht he list of the obs images
+        img_xpred_compare = np.array([img_xpred[i] for i in obs_arg])  # these pred images are the ones that are being compared with the list of the obs images
         img_ypred_compare = np.array([img_ypred[i] for i in obs_arg])
 
         return -0.5 * (np.sum(np.abs(img_xpred_compare - img_xobs) + np.abs(img_ypred_compare - img_yobs)))
@@ -182,6 +187,7 @@ def get_macs0451_img_pos():
 if __name__=='__main__':
     # get_quasar_img_pos()
     get_macs0451_img_pos()
+    plt.show()
 
 # for x, y in zip(x_img['A'], y_img['A']):
 #     ((img_x_pred - x) < 150).any() and ((img_x_pred - x) > 150).any()
