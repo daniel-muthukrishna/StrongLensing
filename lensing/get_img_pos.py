@@ -13,6 +13,8 @@ from pylens import pylens, MassModels
 from imageSim import SBObjects
 import myEmcee
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 def get_quasar_img_pos():
 
@@ -56,6 +58,7 @@ def get_quasar_img_pos():
     plt.show()
 
 def get_macs0451_img_pos():
+    fig_dir = 'Figures/MACS0451/'
     sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
     near = 150  # The predicted and actual image positions are nearby if they are within this many pixels
 
@@ -92,7 +95,7 @@ def get_macs0451_img_pos():
     print(x_src)
 
     nwalkers = 50
-    nsteps = 200
+    nsteps = 300
     z_lens = 0.43
 
     # Observed Image positions
@@ -143,7 +146,7 @@ def get_macs0451_img_pos():
 
         return -0.5 * (np.sum(np.abs(img_xpred_compare - img_xobs) + np.abs(img_ypred_compare - img_yobs)))
 
-    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=2)
+    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=14)
     sampler.sample(nsteps)
 
     result = sampler.result()
@@ -172,8 +175,9 @@ def get_macs0451_img_pos():
     c = ChainConsumer()
     c.add_chain(samples, parameters=['xsrc', 'ysrc', 'qsrc', 'psrc', 'ssrc'])
     c.configure(summary=True, cloud=True)
-    c.plotter.plot()
+    c.plotter.plot(filename=os.path.join(ROOT_DIR, fig_dir, 'source_pos_parameter_contours.png'))
     fig = c.plotter.plot_walks(convolve=100)
+    fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'))
 
     # print(image_coords_pred)
     # plt.show()
