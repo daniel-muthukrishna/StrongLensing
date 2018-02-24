@@ -16,6 +16,7 @@ import myEmcee
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
+
 def get_quasar_img_pos():
 
     # Define source positions as a Guassian surface brightness profile
@@ -57,7 +58,9 @@ def get_quasar_img_pos():
 
     plt.show()
 
+
 def get_macs0451_img_pos():
+    fit_lens = True
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
     near = 150  # The predicted and actual image positions are nearby if they are within this many pixels
@@ -84,14 +87,23 @@ def get_macs0451_img_pos():
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
-    pars += [LX, LY, LB, LQ, LP]
-    cov += [500, 500, 300, 0.3, 50]
+    if fit_lens:
+        pars += [LX, LY, LB, LQ, LP]
+        cov += [500, 500, 300, 0.3, 50]
     cov = np.array(cov)
 
     x, y = np.meshgrid(np.arange(sa[0], sa[1], 1.), np.arange(sa[0], sa[1], 1.))
 
-    nwalkers = 20
-    nsteps = 3
+    if not fit_lens:
+        for lens in lenses:
+            lens.setPars()
+        x_src1, y_src1 = pylens.getDeflections(lenses, [x, y])
+        print(x_src1)
+
+
+
+    nwalkers = 50
+    nsteps = 200
     z_lens = 0.43
 
     # Observed Image positions
@@ -107,10 +119,13 @@ def get_macs0451_img_pos():
         for src in srcs:
             src.setPars()
 
-        for lens in lenses:
-            lens.setPars()
-        x_src, y_src = pylens.getDeflections(lenses, [x, y])
-        print(x_src)
+        if fit_lens:
+            for lens in lenses:
+                lens.setPars()
+            x_src, y_src = pylens.getDeflections(lenses, [x, y])
+            print(x_src)
+        else:
+            x_src, y_src = x_src1, y_src1
 
         image_plane = src.pixeval(x_src, y_src)
 
@@ -173,8 +188,11 @@ def get_macs0451_img_pos():
     # print(truth)
 
     # Plot parameter contours and mcmc chains
+    param_names = ['xsrc', 'ysrc', 'qsrc', 'pasrc', 'sigmasrc']
+    if fit_lens:
+        param_names += ['xlens', 'ylens', 'blens', 'qlens', 'palens']
     c = ChainConsumer()
-    c.add_chain(samples, parameters=['xsrc', 'ysrc', 'qsrc', 'psrc', 'ssrc'])
+    c.add_chain(samples, parameters=param_names)
     c.configure(summary=True, cloud=True)
     c.plotter.plot(filename=os.path.join(ROOT_DIR, fig_dir, 'source_pos_parameter_contours.png'))
     fig = c.plotter.plot_walks(convolve=100)
