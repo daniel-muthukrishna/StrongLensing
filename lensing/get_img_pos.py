@@ -60,21 +60,19 @@ def get_quasar_img_pos():
 
 
 def get_macs0451_img_pos():
-    fit_lens = False
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
 
     # Define source positions as a Guassian surface brightness profile
     X1 = pymc.Uniform('X1', 2500., 3900., value=3034)
     Y1 = pymc.Uniform('Y1', 2400., 3500., value=3053)
-    R1 = pymc.Uniform('R1', 0., 250., value=50)
-    Q1 = pymc.Uniform('Q1', 0.2, 1., value=0.3)
-    P1 = pymc.Uniform('P1', -180., 180., value=30.)
-    N1 = pymc.Uniform('N1', 0.6, 6., value=0.7)
-    src = SBObjects.Sersic('', {'x': X1, 'y': Y1, 're': R1, 'q': Q1, 'pa': P1, 'n': N1})
+    Q1 = pymc.Uniform('Q1', 1., 1., value=1.)
+    P1 = pymc.Uniform('P1', 0., 0., value=0)
+    S1 = pymc.Uniform('N1', 0.6, 6., value=0.7)
+    src = SBObjects.Gauss('', {'x': X1, 'y': Y1, 'q': Q1,'pa': P1, 'sigma': S1})
     srcs = [src]
-    pars = [X1, Y1, R1, Q1, P1, N1]  # List of parameters
-    cov = [300, 300, 20, 0.3, 50, 0.3]  # List of initial `scatter' for emcee
+    pars = [X1, Y1, S1]  # List of parameters
+    cov = [300, 300, 0.3]  # List of initial `scatter' for emcee
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2900., 3400., value=3034)
@@ -87,24 +85,16 @@ def get_macs0451_img_pos():
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
-    if fit_lens:
-        pars += [LX, LY, LB, LQ, LP]
-        cov += [300, 300, 300, 0.3, 50]
+    pars += [LX, LY, LB, LQ, LP]
+    cov += [300, 300, 300, 0.3, 50]
     cov = np.array(cov)
 
     # Get grid of x and y points
     x, y = np.meshgrid(np.arange(sa[0], sa[1], 1.), np.arange(sa[0], sa[1], 1.))
 
-    # Calculate deflections
-    if not fit_lens:
-        for lens in lenses:
-            lens.setPars()
-        x_src1, y_src1 = pylens.getDeflections(lenses, [x, y])
-        print(x_src1)
-
     # MCMC setup
-    nwalkers = 30
-    nsteps = 200
+    nwalkers = 100
+    nsteps = 1000
     z_lens = 0.43
 
     # Observed Image positions
@@ -113,43 +103,48 @@ def get_macs0451_img_pos():
     y_img['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
     d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
 
+    x_img['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
+    y_img['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
+    d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)  # Update redshift of src
+
     # Define likelihood function
     @pymc.observed
     def logL(value=0., tmp=pars):
         for src in srcs:
             src.setPars()
+        for lens in lenses:
+            lens.setPars()
+        lnlike = {}
 
-        # Calculate deflections
-        if fit_lens:
-            for lens in lenses:
-                lens.setPars()
-            x_src, y_src = pylens.getDeflections(lenses, [x, y])
-        else:
-            x_src, y_src = x_src1, y_src1
+        for image_name in ['A', 'B']:
+            # Calculate deflections
+            x_src, y_src = pylens.getDeflections(lenses, [x, y], d[image_name])
 
-        # Get list of predicted image coordinates
-        image_plane = src.pixeval(x_src, y_src)
-        image_coords_pred = np.add(np.where(image_plane > 0.8), sa[0])  # Only if brightness > 0.8/1
-        print(image_coords_pred)
-        if not image_coords_pred.size:  # If it's an empty list
-            return -1e20
-        img_xpred, img_ypred = image_coords_pred
+            # Get list of predicted image coordinates
+            image_plane = src.pixeval(x_src, y_src)
+            image_coords_pred = np.add(np.where(image_plane > 0.8), sa[0])  # Only if brightness > 0.8/1
+            print(image_name, image_coords_pred)
+            if not image_coords_pred.size:  # If it's an empty list
+                return -1e30
+            img_xpred, img_ypred = image_coords_pred
 
-        # Map each observed image to the single closest predicted image
-        img_xobs, img_yobs = x_img['A'], y_img['A']
-        obs_arg = []
-        for xo, yo in zip(img_xobs, img_yobs):
-            xdist = np.abs(img_xpred - xo)  # pixel distance between xobs and xpredicted
-            ydist = np.abs(img_ypred - yo)
-            dist = xdist + ydist
-            obs_arg.append(np.argmin(dist))  # The index of the obs_img that the given predicted image is closest to
-        obs_arg = np.array(obs_arg)
+            # Map each observed image to the single closest predicted image
+            img_xobs, img_yobs = x_img[image_name], y_img[image_name]
+            obs_arg = []
+            for xo, yo in zip(img_xobs, img_yobs):
+                xdist = np.abs(img_xpred - xo)  # pixel distance between xobs and xpredicted
+                ydist = np.abs(img_ypred - yo)
+                dist = xdist + ydist
+                obs_arg.append(np.argmin(dist))  # The index of the obs_img that the given predicted image is closest to
+            obs_arg = np.array(obs_arg)
 
-        # these pred images are the ones that are being compared with the list of the obs images
-        img_xpred_compare = np.array([img_xpred[i] for i in obs_arg])
-        img_ypred_compare = np.array([img_ypred[i] for i in obs_arg])
+            # these pred images are the ones that are being compared with the list of the obs images
+            img_xpred_compare = np.array([img_xpred[i] for i in obs_arg])
+            img_ypred_compare = np.array([img_ypred[i] for i in obs_arg])
 
-        return -0.5 * (np.sum(np.abs(img_xpred_compare - img_xobs) + np.abs(img_ypred_compare - img_yobs)))
+            lnlike[image_name] = -0.5 * (np.sum(np.abs(img_xpred_compare - img_xobs) + np.abs(img_ypred_compare - img_yobs)))
+
+        return sum(lnlike.values())
 
     # Run MCMC
     sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=14)
@@ -177,9 +172,8 @@ def get_macs0451_img_pos():
     best_fits = list(map(lambda v: (v[1]), zip(*np.percentile(samples_exp, [16, 50, 84], axis=0))))
 
     # Plot parameter contours and mcmc chains
-    param_names = ['$x_{src}$', '$y_{src}$', '$r_{src}$', '$q_{src}$', '$pa_{src}$', '$n_{src}$']
-    if fit_lens:
-        param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
+    param_names = ['$x_{src}$', '$y_{src}$', '$\sigma_{src}$']
+    param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
     c.configure(summary=True, cloud=True)
