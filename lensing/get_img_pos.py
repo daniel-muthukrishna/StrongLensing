@@ -198,10 +198,10 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
 def main():
     pix_scale = 10.
     threshold = 0.01
-    pars = [3026.5186853717728, 3074.974117189091, 7.1537658517127198, 3059.132328681138, 3115.8228026722063,
-            985.66453852255177, 0.59875454346239443, 68.136719134975721]
+    pars = [3026.5186853717728, 3074.974117189091, 7.1537658517127198,
+            3059.132328681138, 3115.8228026722063, 985.66453852255177, 0.59875454346239443, 68.136719134975721]
 
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
     plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold)
     plt.show()
 
