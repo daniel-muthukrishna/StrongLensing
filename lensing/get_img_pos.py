@@ -17,25 +17,25 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
-def plot_img_pos(x1=3034., y1=3053., s1=1.3, lx=3034., ly=3053., lb=950., lq=0.8, lp=110.):
+def plot_img_pos(xsrc=3034., ysrc=3053., sigsrc=1.3, xlens=3034., ylens=3053., blens=950., qlens=0.8, plens=110., pix_scale=1., threshold=0.8):
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
 
     # Define source positions as a Guassian surface brightness profile
-    X1 = pymc.Uniform('X1', 2500., 3900., value=x1)
-    Y1 = pymc.Uniform('Y1', 2400., 3500., value=y1)
+    X1 = pymc.Uniform('X1', 2500., 3900., value=xsrc)
+    Y1 = pymc.Uniform('Y1', 2400., 3500., value=ysrc)
     Q1 = pymc.Uniform('Q1', 0.2, 1., value=1.)
     P1 = pymc.Uniform('P1', -180., 180., value=0.)
-    S1 = pymc.Uniform('N1', 0.6, 6., value=s1)
+    S1 = pymc.Uniform('N1', 0.6, 6., value=sigsrc)
     src = SBObjects.Gauss('', {'x':X1,'y':Y1,'q':Q1,'pa':P1,'sigma':S1})
     srcs = [src]
 
     # Define lens mass model
-    LX = pymc.Uniform('lx', 2900., 3400., value=lx)
-    LY = pymc.Uniform('ly', 2600., 3500., value=ly)
-    LB = pymc.Uniform('lb', 10., 1500., value=lb)
-    LQ = pymc.Uniform('lq', 0.2, 1., value=lq)
-    LP = pymc.Uniform('lp', -180., 180., value=lp)
+    LX = pymc.Uniform('lx', 2900., 3400., value=xlens)
+    LY = pymc.Uniform('ly', 2600., 3500., value=ylens)
+    LB = pymc.Uniform('lb', 10., 1500., value=blens)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=qlens)
+    LP = pymc.Uniform('lp', -180., 180., value=plens)
     XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
     XP = pymc.Uniform('xp', -180., 180., value=0.)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
@@ -45,7 +45,7 @@ def plot_img_pos(x1=3034., y1=3053., s1=1.3, lx=3034., ly=3053., lb=950., lq=0.8
     # x_lens, y_lens, theta, b, q = (51.5, 39.9, 1.1, 21.6, 1.0)
     # pars = (x_lens, y_lens, theta, b, q)
 
-    x, y = np.meshgrid(np.arange(sa[0], sa[1], 1.), np.arange(sa[0], sa[1], 1.))
+    x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     x_src, y_src = pylens.getDeflections(lenses, [x, y], )
     # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
@@ -54,12 +54,15 @@ def plot_img_pos(x1=3034., y1=3053., s1=1.3, lx=3034., ly=3053., lb=950., lq=0.8
 
     plt.figure()
     plt.imshow(image_plane, interpolation='nearest', origin='lower')
+    plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
+    plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_plane.png'))
+    print(np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0]))
 
     # print(pylens.getImgPos(x0=0, y0=0, b=21.6, sx=54.83, sy=38.98, lenses=lenses))
 
 
-def get_macs0451_img_pos():
+def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
 
@@ -76,10 +79,10 @@ def get_macs0451_img_pos():
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2900., 3400., value=3034)
-    LY = pymc.Uniform('ly', 2600., 3500., value=3053)
-    LB = pymc.Uniform('lb', 10., 1500., value=950.)
-    LQ = pymc.Uniform('lq', 0.2, 1., value=0.8)
-    LP = pymc.Uniform('lp', -180., 180., value=110.)
+    LY = pymc.Uniform('ly', 2600., 3500., value=2981)
+    LB = pymc.Uniform('lb', 10., 1500., value=297.)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=0.333)
+    LP = pymc.Uniform('lp', -180., 180., value=85.)
     XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
     XP = pymc.Uniform('xp', -180., 180., value=0.)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
@@ -90,11 +93,11 @@ def get_macs0451_img_pos():
     cov = np.array(cov)
 
     # Get grid of x and y points
-    x, y = np.meshgrid(np.arange(sa[0], sa[1], 1.), np.arange(sa[0], sa[1], 1.))
+    x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
     nwalkers = 100
-    nsteps = 2000
+    nsteps = 500
     z_lens = 0.43
 
     # Observed Image positions
@@ -105,7 +108,7 @@ def get_macs0451_img_pos():
 
     x_img['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
     y_img['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
-    d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)  # Update redshift of src
+    d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
 
     # Define likelihood function
     @pymc.observed
@@ -122,7 +125,7 @@ def get_macs0451_img_pos():
 
             # Get list of predicted image coordinates
             image_plane = src.pixeval(x_src, y_src)
-            image_coords_pred = np.add(np.where(image_plane > 0.8), sa[0])  # Only if brightness > 0.8/1
+            image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0])  # Only if brightness > threshold
             print(image_name, image_coords_pred)
             if not image_coords_pred.size:  # If it's an empty list
                 return -1e30
@@ -147,7 +150,7 @@ def get_macs0451_img_pos():
         return sum(lnlike.values())
 
     # Run MCMC
-    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=14)
+    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=2)
     sampler.sample(nsteps)
 
     # Plot chains
@@ -184,7 +187,7 @@ def get_macs0451_img_pos():
     fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'))
 
     b = best_fits
-    plot_img_pos(x1=b[0], y1=b[1], s1=b[2], lx=b[3], ly=b[4], lb=b[5], lq=b[6], lp=b[7])
+    plot_img_pos(xsrc=b[0], ysrc=b[1], sigsrc=b[2], xlens=b[3], ylens=b[4], blens=b[5], qlens=b[6], plens=b[7])
 
     # print(image_coords_pred)
     # plt.show()
@@ -196,6 +199,8 @@ def get_macs0451_img_pos():
 
 
 if __name__=='__main__':
-    get_macs0451_img_pos()
-    # plot_img_pos(x1=3034., y1=3053., s1=1.3, lx=3034., ly=3053., lb=950., lq=0.8, lp=110.)
+    pix_scale = 10.
+    threshold = 0.01
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
+    plot_img_pos(xsrc=3100., ysrc=3150., sigsrc=1.1, xlens=3050., ylens=3150., blens=1250., qlens=0.4, plens=90., pix_scale=pix_scale, threshold=threshold)
     plt.show()
