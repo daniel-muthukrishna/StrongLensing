@@ -27,7 +27,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8):
     Y1 = pymc.Uniform('Y1', 0., 5000., value=ysrc)
     Q1 = pymc.Uniform('Q1', 0.2, 1., value=1.)
     P1 = pymc.Uniform('P1', -180., 180., value=0.)
-    S1 = pymc.Uniform('N1', 0., 100., value=sigsrc)
+    S1 = pymc.Uniform('N1', 0., 1000., value=sigsrc)
     src = SBObjects.Gauss('', {'x':X1,'y':Y1,'q':Q1,'pa':P1,'sigma':S1})
     srcs = [src]
 
@@ -72,7 +72,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     Y1 = pymc.Uniform('Y1', 2400., 3500., value=3053)
     Q1 = pymc.Uniform('Q1', 0.2, 1., value=1.)
     P1 = pymc.Uniform('P1', -180., 180., value=0.)
-    S1 = pymc.Uniform('N1', 0.6, 10., value=1.3)
+    S1 = pymc.Uniform('N1', 1.5, 1000., value=1.3)
     src = SBObjects.Gauss('', {'x': X1, 'y': Y1, 'q': Q1,'pa': P1, 'sigma': S1})
     srcs = [src]
     pars = [X1, Y1, S1]  # List of parameters
@@ -97,8 +97,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 100
-    nsteps = 2000
+    nwalkers = 1000
+    nsteps = 3000
     z_lens = 0.43
 
     # Observed Image positions
@@ -151,7 +151,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
         return sum(lnlike.values())
 
     # Run MCMC
-    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=20)
+    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=25)
     sampler.sample(nsteps)
 
     # Plot chains
@@ -167,7 +167,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 100
+    burn = 233300
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
@@ -201,8 +201,9 @@ def main():
     pars = [3026.5186853717728, 3074.974117189091, 7.1537658517127198,
             3059.132328681138, 3115.8228026722063, 985.66453852255177, 0.59875454346239443, 68.136719134975721]
 
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold)
     get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold)
+
     plt.show()
 
 
