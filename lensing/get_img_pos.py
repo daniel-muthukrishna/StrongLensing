@@ -93,15 +93,15 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     S1['A'] = pymc.Uniform('N1A', 0., 1000., value=1.3)
     srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
 
-    X1['B'] = pymc.Uniform('X1B', 2500., 3900., value=3034)
-    Y1['B'] = pymc.Uniform('Y1B', 2400., 3500., value=3053)
+    X1['B'] = pymc.Uniform('X1B', 2500., 3900., value=3300)
+    Y1['B'] = pymc.Uniform('Y1B', 2400., 3500., value=3100)
     Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
     P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 1000., value=1.3)
+    S1['B'] = pymc.Uniform('N1B', 0., 1000., value=1.1)
     srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
 
     pars = [X1['A'], Y1['A'], S1['A'], X1['B'], Y1['B'], S1['B']]  # List of parameters
-    cov = [300, 300, 2, 300, 300, 2]  # List of initial `scatter' for emcee
+    cov = [300., 300., 2., 300., 300., 2.]  # List of initial `scatter' for emcee
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2900., 3400., value=3034)
@@ -115,7 +115,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
     pars += [LX, LY, LB, LQ, LP]
-    cov += [300, 300, 300, 0.3, 50]
+    cov += [300., 300., 300., 0.3, 50.]
     cov = np.array(cov)
 
     # Get grid of x and y points
@@ -203,7 +203,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     print(best_fits)
 
     # Plot parameter contours and mcmc chains
-    param_names = ['$x_{src}$', '$y_{src}$', '$\sigma_{src}$']
+    param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigmaA_{src}$', '$xB_{src}$', '$yB_{src}$', '$\sigmaB_{src}$']
     param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
