@@ -203,7 +203,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     print(best_fits)
 
     # Plot parameter contours and mcmc chains
-    param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigmaA_{src}$', '$xB_{src}$', '$yB_{src}$', '$\sigmaB_{src}$']
+    param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigma A_{src}$', '$xB_{src}$', '$yB_{src}$', '$\sigma B_{src}$']
     param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
