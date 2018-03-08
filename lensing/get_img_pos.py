@@ -61,7 +61,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8):
     x_src, y_src = pylens.getDeflections(lenses, [x, y], )
     # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
 
-    image_plane = src['A'].pixeval(x_src, y_src)
+    image_plane = srcs['A'].pixeval(x_src, y_src)
     plt.figure()
     plt.imshow(image_plane, interpolation='nearest', origin='lower')
     plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
@@ -69,7 +69,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8):
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_planeA.png'))
     print('A', np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0]))
 
-    image_plane = src['B'].pixeval(x_src, y_src)
+    image_plane = srcs['B'].pixeval(x_src, y_src)
     plt.figure()
     plt.imshow(image_plane, interpolation='nearest', origin='lower')
     plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
