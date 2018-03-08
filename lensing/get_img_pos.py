@@ -72,7 +72,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     Y1 = pymc.Uniform('Y1', 2400., 3500., value=3053)
     Q1 = pymc.Uniform('Q1', 0.2, 1., value=1.)
     P1 = pymc.Uniform('P1', -180., 180., value=0.)
-    S1 = pymc.Uniform('N1', 1.5, 1000., value=1.3)
+    S1 = pymc.Uniform('N1', 0., 1000., value=1.3)
     src = SBObjects.Gauss('', {'x': X1, 'y': Y1, 'q': Q1,'pa': P1, 'sigma': S1})
     srcs = [src]
     pars = [X1, Y1, S1]  # List of parameters
@@ -167,7 +167,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 233300
+    burn = 200
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
