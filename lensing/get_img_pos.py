@@ -188,6 +188,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'))
 
     b = best_fits
+    print(b)
     plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold)
 
     # print(image_coords_pred)
