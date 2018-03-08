@@ -150,7 +150,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
             x_src, y_src = pylens.getDeflections(lenses, [x, y], d[image_name])
 
             # Get list of predicted image coordinates
-            image_plane = src[image_name].pixeval(x_src, y_src)
+            image_plane = srcs[image_name].pixeval(x_src, y_src)
             image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0])  # Only if brightness > threshold
             print(image_name)
             if not image_coords_pred.size:  # If it's an empty list
@@ -226,8 +226,8 @@ def main():
     threshold = 0.01
     pars = [3014., 3184., 10., 3014., 3182., 1167., 1.0, 41.187714667301265]
 
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold)
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
 
     plt.show()
 
