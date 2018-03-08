@@ -127,7 +127,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
             # Get list of predicted image coordinates
             image_plane = src.pixeval(x_src, y_src)
             image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0])  # Only if brightness > threshold
-            print(image_name, image_coords_pred)
+            print(image_name)
             if not image_coords_pred.size:  # If it's an empty list
                 return -1e30
             img_xpred, img_ypred = image_coords_pred
@@ -151,7 +151,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
         return sum(lnlike.values())
 
     # Run MCMC
-    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=25)
+    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=30)
     sampler.sample(nsteps)
 
     # Plot chains
