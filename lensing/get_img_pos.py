@@ -93,18 +93,18 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None):
     Y1['A'] = pymc.Uniform('Y1A', 2400., 3600., value=3053.)
     Q1['A'] = pymc.Uniform('Q1A', 0.2, 1., value=1.)
     P1['A'] = pymc.Uniform('P1A', -180., 180., value=0.)
-    S1['A'] = pymc.Uniform('N1A', 0., 400., value=10.)
+    S1['A'] = pymc.Uniform('N1A', 0., 30., value=3.)
     srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
 
     X1['B'] = pymc.Uniform('X1B', 2300., 3900., value=3300.)
     Y1['B'] = pymc.Uniform('Y1B', 2500., 3500., value=3100.)
     Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
     P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 400., value=10.)
+    S1['B'] = pymc.Uniform('N1B', 0., 30., value=3.)
     srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
 
     pars = [X1['A'], Y1['A'], S1['A'], X1['B'], Y1['B'], S1['B']]  # List of parameters
-    cov = [400., 400., 10., 400., 400., 10.]  # List of initial `scatter' for emcee
+    cov = [400., 400., 1.5, 400., 400., 1.5]  # List of initial `scatter' for emcee
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2900., 3400., value=3034)
@@ -228,7 +228,7 @@ def main():
     fits_file_macs0451 = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
     pix_scale = 10.
     threshold = 0.01
-    pars = [3080.7646008031743, 2925.3843829184448, 40., 3150.9870988543121, 3062.6347697082842, 858.04254692870416, 0.62039474551597162, 13.077037229652547]
+    pars = [3080., 3060., 25., 3040., 3240., 25., 2900., 3240., 1030., 1.0, 84.]
 
     # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
     get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
