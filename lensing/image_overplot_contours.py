@@ -14,18 +14,23 @@ def read_fits_image(fits_file):
     return image
 
 
-def plot_image(fits_file, samples, fig_dir='', img_name=''):
+def plot_image(fits_file, fig):
     image = read_fits_image(fits_file)
 
-    plt.figure()
-    plt.imshow(image, vmin=0, vmax=0.3, cmap='hot')
-    plt.gca().invert_yaxis()
+    plt.imshow(image, vmin=0, vmax=0.5, cmap='hot', origin='lower')
+
+
+def plot_image_and_contours(fits_file, samples, fig_dir='', img_name=''):
+    fig = plt.figure()
+
+    plot_image(fits_file, fig)
 
     counts, xbins, ybins = np.histogram2d(samples[:, 0], samples[:, 1], bins=100, normed=LogNorm())
     plt.contour(counts.transpose(), extent=[xbins.min(), xbins.max(), ybins.min(), ybins.max()])
     plt.xlim(1700, 4900)
     plt.ylim(1650, 4450)
     plt.savefig(os.path.join(fig_dir, 'image_with_contours%s.png' % img_name))
+
 
 
 if __name__ == '__main__':

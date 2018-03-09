@@ -12,15 +12,16 @@ from mass_model import pred_positions
 from pylens import pylens, MassModels
 from imageSim import SBObjects
 import myEmcee
+from image_overplot_contours import plot_image
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
-def plot_img_pos(pars, pix_scale=1., threshold=0.8):
+def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None):
     xsrcA, ysrcA, sigsrcA, xsrcB, ysrcB, sigsrcB, xlens, ylens, blens, qlens, plens = pars
     fig_dir = 'Figures/MACS0451/'
-    sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
+    sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
 
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
@@ -37,9 +38,6 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8):
     P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
     S1['B'] = pymc.Uniform('N1B', 0., 10000., value=sigsrcB)
     srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
-
-    pars = [X1['A'], Y1['A'], S1['A'], X1['B'], Y1['B'], S1['B']]  # List of parameters
-    cov = [300, 300, 2, 300, 300, 2]  # List of initial `scatter' for emcee
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 0., 5000., value=xlens)
@@ -61,52 +59,57 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8):
     x_src, y_src = pylens.getDeflections(lenses, [x, y], )
     # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
 
-    image_plane = srcs['A'].pixeval(x_src, y_src)
-    plt.figure()
-    plt.imshow(image_plane, interpolation='nearest', origin='lower')
-    plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
-    plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
-    plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_planeA.png'))
-    print('A', np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0]))
+    image_plane, image_coords_pred = {}, {}
+    for name in ['A', 'B']:
+        image_plane[name] = srcs[name].pixeval(x_src, y_src)
+        plt.figure()
+        plt.imshow(image_plane[name], interpolation='nearest', origin='lower')
+        plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
+        plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
+        plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_plane%s.png' % name))
+        image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold), pix_scale), sa[0])
+        print(name, image_coords_pred[name])
 
-    image_plane = srcs['B'].pixeval(x_src, y_src)
-    plt.figure()
-    plt.imshow(image_plane, interpolation='nearest', origin='lower')
-    plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
-    plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
-    plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_planeB.png'))
-    print(np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0]))
+    fig = plt.figure()
+    plot_image(fits_file, fig)
+    plt.xlim(sa[0], sa[1])
+    plt.ylim(sa[0], sa[1])
+    for name in ['A', 'B']:
+        plt.scatter(image_coords_pred[name][1], image_coords_pred[name][0], marker='.', alpha=0.1)
+    plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
+
+
 
     # print(pylens.getImgPos(x0=0, y0=0, b=21.6, sx=54.83, sy=38.98, lenses=lenses))
 
 
-def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
+def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None):
     fig_dir = 'Figures/MACS0451/'
-    sa = (2000, 5000)  # search area is 2000 pixels to 5000 pixels
+    sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
 
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
-    X1['A'] = pymc.Uniform('X1A', 2500., 3900., value=3034)
-    Y1['A'] = pymc.Uniform('Y1A', 2400., 3500., value=3053)
+    X1['A'] = pymc.Uniform('X1A', 2500., 3900., value=3034.)
+    Y1['A'] = pymc.Uniform('Y1A', 2400., 3600., value=3053.)
     Q1['A'] = pymc.Uniform('Q1A', 0.2, 1., value=1.)
     P1['A'] = pymc.Uniform('P1A', -180., 180., value=0.)
-    S1['A'] = pymc.Uniform('N1A', 0., 1000., value=1.3)
+    S1['A'] = pymc.Uniform('N1A', 0., 400., value=10.)
     srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
 
-    X1['B'] = pymc.Uniform('X1B', 2500., 3900., value=3300)
-    Y1['B'] = pymc.Uniform('Y1B', 2400., 3500., value=3100)
+    X1['B'] = pymc.Uniform('X1B', 2300., 3900., value=3300.)
+    Y1['B'] = pymc.Uniform('Y1B', 2500., 3500., value=3100.)
     Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
     P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 1000., value=1.1)
+    S1['B'] = pymc.Uniform('N1B', 0., 400., value=10.)
     srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
 
     pars = [X1['A'], Y1['A'], S1['A'], X1['B'], Y1['B'], S1['B']]  # List of parameters
-    cov = [300., 300., 2., 300., 300., 2.]  # List of initial `scatter' for emcee
+    cov = [400., 400., 10., 400., 400., 10.]  # List of initial `scatter' for emcee
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2900., 3400., value=3034)
     LY = pymc.Uniform('ly', 2600., 3500., value=2981)
-    LB = pymc.Uniform('lb', 10., 1500., value=297.)
+    LB = pymc.Uniform('lb', 10., 2000., value=297.)
     LQ = pymc.Uniform('lq', 0.2, 1., value=0.333)
     LP = pymc.Uniform('lp', -180., 180., value=85.)
     XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
@@ -115,7 +118,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
     # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
     pars += [LX, LY, LB, LQ, LP]
-    cov += [300., 300., 300., 0.3, 50.]
+    cov += [400., 400., 400., 0.3, 50.]
     cov = np.array(cov)
 
     # Get grid of x and y points
@@ -123,7 +126,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
 
     # MCMC setup
     nwalkers = 1000
-    nsteps = 3000
+    nsteps = 4000
     z_lens = 0.43
 
     # Observed Image positions
@@ -163,7 +166,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
             for xo, yo in zip(img_xobs, img_yobs):
                 xdist = np.abs(img_xpred - xo)  # pixel distance between xobs and xpredicted
                 ydist = np.abs(img_ypred - yo)
-                dist = xdist + ydist
+                dist = xdist**2 + ydist**2
                 obs_arg.append(np.argmin(dist))  # The index of the obs_img that the given predicted image is closest to
             obs_arg = np.array(obs_arg)
 
@@ -214,7 +217,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
 
     b = best_fits
     print(b)
-    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold)
+    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file)
 
     # print(image_coords_pred)
     # plt.show()
@@ -222,12 +225,13 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8):
 
 
 def main():
+    fits_file_macs0451 = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
     pix_scale = 10.
     threshold = 0.01
-    pars = [3014., 3184., 10., 3014., 3182., 1167., 1.0, 41.187714667301265]
+    pars = [3080.7646008031743, 2925.3843829184448, 40., 3150.9870988543121, 3062.6347697082842, 858.04254692870416, 0.62039474551597162, 13.077037229652547]
 
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
 
     plt.show()
 

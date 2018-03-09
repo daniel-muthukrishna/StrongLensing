@@ -5,7 +5,7 @@ from collections import OrderedDict
 from chainconsumer import ChainConsumer
 from lensing.mass_model import lnprob
 import matplotlib.pyplot as plt
-from lensing.image_overplot_contours import plot_image
+from lensing.image_overplot_contours import plot_image_and_contours
 from lensing.dist_ang import scale_einstein_radius
 
 
@@ -49,7 +49,7 @@ def run_mcmc(x_img, y_img, fig_dir, d=None, ndim=5, nwalkers=100, nsteps=200, pr
     fig.savefig(os.path.join(fig_dir, 'mcmc_walks%s.png' % img_name))
 
     if fits_file:
-        plot_image(fits_file, samples, fig_dir, img_name)
+        plot_image_and_contours(fits_file, samples, fig_dir, img_name)
 
     plt.show()
 
