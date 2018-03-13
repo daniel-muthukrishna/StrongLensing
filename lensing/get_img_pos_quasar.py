@@ -19,30 +19,23 @@ ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
 def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
-    xsrcA, ysrcA, sigsrcA, xsrcB, ysrcB, sigsrcB, xlens, ylens, blens, qlens, plens = pars
-    fig_dir = 'Figures/MACS0451/'
-    sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
+    xsrcA, ysrcA, sigsrcA, xlens, ylens, blens, qlens, plens = pars
+    fig_dir = 'Figures/lensed_quasar/'
+    sa = (0, 100)  # search area is 2000 pixels to 5000 pixels
 
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
-    X1['A'] = pymc.Uniform('X1A', 0., 5000., value=xsrcA)
-    Y1['A'] = pymc.Uniform('Y1A', 0., 5000., value=ysrcA)
+    X1['A'] = pymc.Uniform('X1A', 0., 100., value=xsrcA)
+    Y1['A'] = pymc.Uniform('Y1A', 0., 100., value=ysrcA)
     Q1['A'] = pymc.Uniform('Q1A', 0.2, 1., value=1.)
     P1['A'] = pymc.Uniform('P1A', -180., 180., value=0.)
-    S1['A'] = pymc.Uniform('N1A', 0., 10000., value=sigsrcA)
+    S1['A'] = pymc.Uniform('N1A', 0., 6., value=sigsrcA)
     srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
 
-    X1['B'] = pymc.Uniform('X1B', 0., 5000., value=xsrcB)
-    Y1['B'] = pymc.Uniform('Y1B', 0., 5000., value=ysrcB)
-    Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
-    P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 10000., value=sigsrcB)
-    srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
-
     # Define lens mass model
-    LX = pymc.Uniform('lx', 0., 5000., value=xlens)
-    LY = pymc.Uniform('ly', 0., 5000., value=ylens)
-    LB = pymc.Uniform('lb', 0., 5000., value=blens)
+    LX = pymc.Uniform('lx', 0., 100., value=xlens)
+    LY = pymc.Uniform('ly', 0., 100., value=ylens)
+    LB = pymc.Uniform('lb', 0., 100., value=blens)
     LQ = pymc.Uniform('lq', 0.2, 1., value=qlens)
     LP = pymc.Uniform('lp', -180., 180., value=plens)
     XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
@@ -50,16 +43,12 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
     lenses = [lens]
-    # # OR MY MODEL I have checked that they get the same answer
-    # x_lens, y_lens, theta, b, q = (51.5, 39.9, 1.1, 21.6, 1.0)
-    # pars = (x_lens, y_lens, theta, b, q)
 
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
-    # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
 
     image_plane, image_coords_pred = {}, {}
-    for name in ['A', 'B']:
+    for name in ['A']:
         x_src, y_src = pylens.getDeflections(lenses, [x, y], d=d[name])
         image_plane[name] = srcs[name].pixeval(x_src, y_src)
         plt.figure()
@@ -68,14 +57,18 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
         plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_plane%s.png' % name))
         image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold), pix_scale), sa[0])
-        print(name, image_coords_pred[name])
+
+        lnlike, img_xpred_compare, img_ypred_compare = calc_lnlike(image_coords_pred[name], img_xobs[name], img_yobs[name])
+
+        print(img_xpred_compare, img_xobs[name], lnlike)
+        print(img_ypred_compare, img_yobs[name], lnlike)
 
     fig = plt.figure()
-    plot_image(fits_file, fig)
+    plot_image(fits_file, fig, vmax=10.)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
-    for name in ['A', 'B']:
-        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.1)
+    for name in ['A']:
+        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.3)
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
 
@@ -103,35 +96,27 @@ def calc_lnlike(image_coords_pred, img_xobs, img_yobs):
     return lnlike, img_xpred_compare, img_ypred_compare
 
 
-def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
-    fig_dir = 'Figures/MACS0451/'
-    sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
+def get_quasar_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
+    fig_dir = 'Figures/lensed_quasar/'
+    sa = (0, 100)  # search area is 2000 pixels to 5000 pixels
 
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
-    X1['A'] = pymc.Uniform('X1A', 2500., 3900., value=3034.)
-    Y1['A'] = pymc.Uniform('Y1A', 2400., 3600., value=3053.)
+    X1['A'] = pymc.Uniform('X1A', 0., 100., value=52.)
+    Y1['A'] = pymc.Uniform('Y1A', 0., 100., value=48.)
     Q1['A'] = pymc.Uniform('Q1A', 1., 1., value=1.)
     P1['A'] = pymc.Uniform('P1A', 0., 0., value=0.)
-    S1['A'] = pymc.Uniform('N1A', 0., 10., value=3.)
+    S1['A'] = pymc.Uniform('N1A', 0., 6., value=1.2)
     srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
 
-    X1['B'] = pymc.Uniform('X1B', 2300., 3900., value=3300.)
-    Y1['B'] = pymc.Uniform('Y1B', 2500., 3500., value=3100.)
-    Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
-    P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 10., value=3.)
-    srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
-
     pars = [X1['A'], Y1['A'], S1['A']]  # List of parameters
-    pars += [X1['B'], Y1['B'], S1['B']]
-    cov = [400., 400., 1.5, 400., 400., 1.5]  # List of initial `scatter' for emcee
+    cov = [0.1, 0.1, 1.5]  # List of initial `scatter' for emcee
 
     # Define lens mass model
-    LX = pymc.Uniform('lx', 2900., 3400., value=3034)
-    LY = pymc.Uniform('ly', 2600., 3500., value=2981)
-    LB = pymc.Uniform('lb', 10., 2000., value=297.)
-    LQ = pymc.Uniform('lq', 0.2, 1., value=0.333)
+    LX = pymc.Uniform('lx', 0., 100., value=49.)
+    LY = pymc.Uniform('ly', 0., 100., value=50.)
+    LB = pymc.Uniform('lb', 10., 40., value=20.)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=0.8)
     LP = pymc.Uniform('lp', -180., 180., value=85.)
     XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
     XP = pymc.Uniform('xp', -180., 180., value=0.)
@@ -139,15 +124,15 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
     pars += [LX, LY, LB, LQ, LP]
-    cov += [400., 400., 400., 0.3, 50.]
+    cov += [0.2, 0.2, 0.2, 0.05, 10.]
     cov = np.array(cov)
 
     # Get grid of x and y points
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 1000
-    nsteps = 4000
+    nwalkers = 100
+    nsteps = 1000
 
     # Define likelihood function
     @pymc.observed
@@ -158,7 +143,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
             lens.setPars()
         lnlike = {}
 
-        for name in ['A', 'B']:
+        for name in ['A']:
             # Calculate deflections
             x_src, y_src = pylens.getDeflections(lenses, [x, y], d[name])
 
@@ -191,13 +176,21 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
         return sum(lnlike.values())
 
     # Run MCMC
-    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=30)
+    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=44)
     sampler.sample(nsteps)
 
     # Plot chains
     result = sampler.result()
     posterior, samples, _, best = result
+    print posterior[90]
+
+    print samples[90]
     print best
+
+    minarg = np.argmin(posterior)
+    print(minarg)
+    print(posterior[minarg])
+    print("samplesmin", samples[minarg])
     import pylab
     for j in range(nwalkers):
         pylab.plot(posterior[:, j])
@@ -219,7 +212,6 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
     # Plot parameter contours and mcmc chains
     param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigma A_{src}$']
-    param_names += ['$xB_{src}$', '$yB_{src}$', '$\sigma B_{src}$']
     param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
@@ -239,25 +231,21 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
 
 def main():
-    fits_file_macs0451 = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
+    fits_file = '/Users/danmuth/PycharmProjects/StrongLensing/data/lensed_quasar/WFI2033_F814W.fits'
+
     # Observed Image positions
     img_xobs, img_yobs, d = {}, {}, {}
     z_lens = 0.43
-    img_xobs['A'] = np.array([2375.942110, 2378.5, 2379.816610, 2381.299088, 2384, 2385.927991, 2389.555816, 2457.694760, 2450.744242, 2442.833333, 2437.857924, 2433.064587, 2427.166666, 2424.099866, 2418.5, 2416.444081, 2462])
-    img_yobs['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
+    img_xobs['A'] = np.array([27.1051, 69.3759, 71.0171, 56.8204])
+    img_yobs['A'] = np.array([33.6946, 28.1791, 58.9579, 61.2290])
     d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
 
-    img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
-    img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
-    d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
 
-
-
-    pix_scale = 10.
-    threshold = 0.01
-    pars = [3.05918823e+03,   3.04371268e+03,  5.13143731e+00,   3.01632534e+03, 3.27858853e+03, 5.57104944e+00, 3.10821667e+03, 3.24988038e+03, 1.06301319e+03,   6.76368456e-01,   7.40971734e+01]
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    pix_scale = 1.
+    threshold = 0.8
+    pars = [ 40.05539297, 50.05217837,  5.47422693, 39.05739221, 50.16109415, 36.36017755,  0.97131709, -41.46158563]
+    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    # get_quasar_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
     plt.show()
 
