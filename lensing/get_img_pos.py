@@ -103,7 +103,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None):
     S1['B'] = pymc.Uniform('N1B', 0., 10., value=3.)
     srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
 
-    pars = [X1['A'], Y1['A'], S1['A'], X1['B'], Y1['B'], S1['B']]  # List of parameters
+    pars = [X1['A'], Y1['A'], S1['A']]  # List of parameters
+    pars += [X1['B'], Y1['B'], S1['B']]
     cov = [400., 400., 1.5, 400., 400., 1.5]  # List of initial `scatter' for emcee
 
     # Define lens mass model
@@ -206,16 +207,18 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None):
     print(best_fits)
 
     # Plot parameter contours and mcmc chains
-    param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigma A_{src}$', '$xB_{src}$', '$yB_{src}$', '$\sigma B_{src}$']
+    param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigma A_{src}$']
+    param_names += ['$xB_{src}$', '$yB_{src}$', '$\sigma B_{src}$']
     param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
     c.configure(summary=True, cloud=True)
-    c.plotter.plot(filename=os.path.join(ROOT_DIR, fig_dir, 'source_pos_parameter_contours.png'))
+    fig = c.plotter.plot()
+    fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_parameter_contours.png'), transparent=False)
     fig = c.plotter.plot_walks(convolve=100)
-    fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'))
+    fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'), transparent=False)
 
-    b = best_fits
+    b = best
     print(b)
     plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file)
 
@@ -228,10 +231,9 @@ def main():
     fits_file_macs0451 = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
     pix_scale = 10.
     threshold = 0.01
-    pars = [3054.4138404252603, 3094.794932230287, 10., 3028.76366500422, 3271.5496917860473, 10., 3098.3827508017921, 3251.7321033895837, 1091.7027287536316, 0.74409470156039592, 71.832411227736458]
-
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
+    pars = [3.05918823e+03,   3.04371268e+03,  5.13143731e+00,   3.01632534e+03, 3.27858853e+03, 5.57104944e+00, 3.10821667e+03, 3.24988038e+03, 1.06301319e+03,   6.76368456e-01,   7.40971734e+01]
+    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
+    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451)
 
     plt.show()
 

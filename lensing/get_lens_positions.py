@@ -44,9 +44,10 @@ def run_mcmc(x_img, y_img, fig_dir, d=None, ndim=5, nwalkers=100, nsteps=200, pr
     c = ChainConsumer()
     c.add_chain(samples, parameters=list(initial.keys()))
     c.configure(summary=True, cloud=True)
-    c.plotter.plot(filename=os.path.join(fig_dir, 'parameter_contours%s.png' % img_name), truth=truth)
+    fig = c.plotter.plot(truth=truth)
+    fig.savefig(os.path.join(fig_dir, 'parameter_contours%s.png' % img_name), transparent=False)
     fig = c.plotter.plot_walks(truth=truth, convolve=100)
-    fig.savefig(os.path.join(fig_dir, 'mcmc_walks%s.png' % img_name))
+    fig.savefig(os.path.join(fig_dir, 'mcmc_walks%s.png' % img_name), transparent=False)
 
     if fits_file:
         plot_image_and_contours(fits_file, samples, fig_dir, img_name)
