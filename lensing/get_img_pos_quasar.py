@@ -46,7 +46,6 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
-
     image_plane, image_coords_pred = {}, {}
     for name in ['A']:
         x_src, y_src = pylens.getDeflections(lenses, [x, y], d=d[name])
@@ -63,12 +62,13 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         print(img_xpred_compare, img_xobs[name], lnlike)
         print(img_ypred_compare, img_yobs[name], lnlike)
 
+    colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
     fig = plt.figure()
     plot_image(fits_file, fig, vmax=10.)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in ['A']:
-        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.3)
+        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.3, c=next(colors))
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
 

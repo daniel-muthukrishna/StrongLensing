@@ -65,12 +65,13 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold)[::-1], pix_scale), sa[0])
         print(name, image_coords_pred[name])
 
+    colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
     fig = plt.figure()
     plot_image(fits_file, fig)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in ['A', 'B']:
-        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.1)
+        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.3, c=next(colors))
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
 
@@ -141,8 +142,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 100
-    nsteps = 1000
+    nwalkers = 1000
+    nsteps = 3000
 
     # Define likelihood function
     @pymc.observed
@@ -249,7 +250,7 @@ def main():
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [3.05918823e+03,   3.04371268e+03,  5.13143731e+00,   3.01632534e+03, 3.27858853e+03, 5.57104944e+00, 3.10821667e+03, 3.24988038e+03, 1.06301319e+03,   6.76368456e-01,   7.40971734e+01]
+    pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
     # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
     get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
