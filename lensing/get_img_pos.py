@@ -19,25 +19,21 @@ ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
 def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
-    xsrcA, ysrcA, sigsrcA, xsrcB, ysrcB, sigsrcB, xlens, ylens, blens, qlens, plens = pars
+    xsrc, ysrc, sigsrc = {}, {}, {}
+    xsrc['A'], ysrc['A'], sigsrc['A'], xsrc['B'], ysrc['B'], sigsrc['B'], xlens, ylens, blens, qlens, plens = pars
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
+    names = xsrc.keys()
 
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
-    X1['A'] = pymc.Uniform('X1A', 0., 5000., value=xsrcA)
-    Y1['A'] = pymc.Uniform('Y1A', 0., 5000., value=ysrcA)
-    Q1['A'] = pymc.Uniform('Q1A', 0.2, 1., value=1.)
-    P1['A'] = pymc.Uniform('P1A', -180., 180., value=0.)
-    S1['A'] = pymc.Uniform('N1A', 0., 10000., value=sigsrcA)
-    srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
-
-    X1['B'] = pymc.Uniform('X1B', 0., 5000., value=xsrcB)
-    Y1['B'] = pymc.Uniform('Y1B', 0., 5000., value=ysrcB)
-    Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
-    P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 10000., value=sigsrcB)
-    srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
+    for name in names:
+        X1[name] = pymc.Uniform('X1%s' % name, 0., 5000., value=xsrc[name])
+        Y1[name] = pymc.Uniform('Y1%s' % name, 0., 5000., value=ysrc[name])
+        Q1[name] = pymc.Uniform('Q1%s' % name, 0.2, 1., value=1.)
+        P1[name] = pymc.Uniform('P1%s' % name, -180., 180., value=0.)
+        S1[name] = pymc.Uniform('N1%s' % name, 0., 10000., value=sigsrc[name])
+        srcs[name] = SBObjects.Gauss('', {'x': X1[name], 'y': Y1[name], 'q': Q1[name],'pa': P1[name], 'sigma': S1[name]})
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 0., 5000., value=xlens)
@@ -54,7 +50,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     image_plane, image_coords_pred = {}, {}
-    for name in ['A', 'B']:
+    for name in names:
         x_src, y_src = pylens.getDeflections(lenses, [x, y], d=d[name])
         image_plane[name] = srcs[name].pixeval(x_src, y_src)
         plt.figure()
@@ -70,7 +66,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     plot_image(fits_file, fig)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
-    for name in ['A', 'B']:
+    for name in names:
         plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.3, c=next(colors))
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
@@ -78,50 +74,23 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     # print(pylens.getImgPos(x0=0, y0=0, b=21.6, sx=54.83, sy=38.98, lenses=lenses))
 
 
-def calc_lnlike(image_coords_pred, img_xobs, img_yobs):
-    img_xpred, img_ypred = image_coords_pred
-
-    # Map each observed image to the single closest predicted image
-    pred_arg = []
-    for xo, yo in zip(img_xobs, img_yobs):
-        xdist = np.abs(img_xpred - xo)  # pixel distance between xobs and xpredicted
-        ydist = np.abs(img_ypred - yo)
-        dist = xdist ** 2 + ydist ** 2
-        pred_arg.append(np.argmin(dist))  # The index of the pred_img that the given observed image is closest to
-    pred_arg = np.array(pred_arg)
-
-    # these pred images are the ones that are being compared with the list of the obs images
-    img_xpred_compare = np.array([img_xpred[i] for i in pred_arg])
-    img_ypred_compare = np.array([img_ypred[i] for i in pred_arg])
-
-    lnlike = -0.5 * (np.sum((img_xpred_compare - img_xobs) ** 2 + (img_ypred_compare - img_yobs) ** 2))
-
-    return lnlike, img_xpred_compare, img_ypred_compare
-
-
 def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
-
+    names = img_xobs.keys()
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
-    X1['A'] = pymc.Uniform('X1A', 2500., 3900., value=3034.)
-    Y1['A'] = pymc.Uniform('Y1A', 2400., 3600., value=3053.)
-    Q1['A'] = pymc.Uniform('Q1A', 1., 1., value=1.)
-    P1['A'] = pymc.Uniform('P1A', 0., 0., value=0.)
-    S1['A'] = pymc.Uniform('N1A', 0., 10., value=3.)
-    srcs['A'] = SBObjects.Gauss('', {'x': X1['A'], 'y': Y1['A'], 'q': Q1['A'],'pa': P1['A'], 'sigma': S1['A']})
+    pars, cov = [], []
+    for name in names:
+        X1[name] = pymc.Uniform('X1%s' % name, 2300., 3900., value=3034.)
+        Y1[name] = pymc.Uniform('Y1%s' % name, 2400., 3600., value=3053.)
+        Q1[name] = pymc.Uniform('Q1%s' % name, 1., 1., value=1.)
+        P1[name] = pymc.Uniform('P1%s' % name, 0., 0., value=0.)
+        S1[name] = pymc.Uniform('N1%s' % name, 0., 10., value=3.)
+        srcs[name] = SBObjects.Gauss('', {'x': X1[name], 'y': Y1[name], 'q': Q1[name],'pa': P1[name], 'sigma': S1[name]})
 
-    X1['B'] = pymc.Uniform('X1B', 2300., 3900., value=3300.)
-    Y1['B'] = pymc.Uniform('Y1B', 2500., 3500., value=3100.)
-    Q1['B'] = pymc.Uniform('Q1B', 0.2, 1., value=1.)
-    P1['B'] = pymc.Uniform('P1B', -180., 180., value=0.)
-    S1['B'] = pymc.Uniform('N1B', 0., 10., value=3.)
-    srcs['B'] = SBObjects.Gauss('', {'x': X1['B'], 'y': Y1['B'], 'q': Q1['B'],'pa': P1['B'], 'sigma': S1['B']})
-
-    pars = [X1['A'], Y1['A'], S1['A']]  # List of parameters
-    pars += [X1['B'], Y1['B'], S1['B']]
-    cov = [400., 400., 1.5, 400., 400., 1.5]  # List of initial `scatter' for emcee
+        pars += [X1[name], Y1[name], S1[name]]  # List of parameters
+        cov += [400., 400., 1.5]  # List of initial `scatter' for emcee
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2900., 3400., value=3034)
@@ -142,8 +111,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 1000
-    nsteps = 3000
+    nwalkers = 100
+    nsteps = 1000
 
     # Define likelihood function
     @pymc.observed
@@ -154,7 +123,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
             lens.setPars()
         lnlike = {}
 
-        for name in ['A', 'B']:
+        for name in names:
             # Calculate deflections
             x_src, y_src = pylens.getDeflections(lenses, [x, y], d[name])
 
@@ -214,8 +183,9 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     print(best_fits)
 
     # Plot parameter contours and mcmc chains
-    param_names = ['$xA_{src}$', '$yA_{src}$', '$\sigma A_{src}$']
-    param_names += ['$xB_{src}$', '$yB_{src}$', '$\sigma B_{src}$']
+    param_names = []
+    for name in names:
+        param_names += ['$x%s_{src}$' % name, '$y%s_{src}$' % name, '$\sigma %s_{src}$' % name]
     param_names += ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
@@ -228,10 +198,6 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     b = best
     print(b)
     plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-
-    # print(image_coords_pred)
-    # plt.show()
-    # return image_coords_pred
 
 
 def main():
@@ -248,6 +214,18 @@ def main():
     img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
 
+    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
+    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
+    d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
+
+    img_xobs['31'] = np.array([2933.063074, 3393.715824])
+    img_yobs['31'] = np.array([2943.400421, 3398.196336])
+    d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
+
+    img_xobs['41'] = np.array([3222.796159, 3227.700108])
+    img_yobs['41'] = np.array([3550.903781, 3542.180780])
+    d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
+
     pix_scale = 10.
     threshold = 0.01
     pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
@@ -259,3 +237,7 @@ def main():
 
 if __name__=='__main__':
     main()
+
+
+# This was a good model for just sources A and B
+# pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
