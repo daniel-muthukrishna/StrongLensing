@@ -56,7 +56,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
         plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
         plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_plane%s.png' % name))
-        image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold), pix_scale), sa[0])
+        image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold), pix_scale)[::-1], sa[0])
 
         lnlike, img_xpred_compare, img_ypred_compare = calc_lnlike(image_coords_pred[name], img_xobs[name], img_yobs[name])
 
@@ -149,7 +149,7 @@ def get_quasar_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
             # Get list of predicted image coordinates
             image_plane = srcs[name].pixeval(x_src, y_src)
-            image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0])  # Only if brightness > threshold
+            image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold), pix_scale)[::-1], sa[0])  # Only if brightness > threshold
 
             if not image_coords_pred.size:  # If it's an empty list
                 return -1e30
@@ -182,15 +182,8 @@ def get_quasar_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     # Plot chains
     result = sampler.result()
     posterior, samples, _, best = result
-    print posterior[90]
-
-    print samples[90]
     print best
 
-    minarg = np.argmin(posterior)
-    print(minarg)
-    print(posterior[minarg])
-    print("samplesmin", samples[minarg])
     import pylab
     for j in range(nwalkers):
         pylab.plot(posterior[:, j])
@@ -223,7 +216,7 @@ def get_quasar_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
     b = best
     print(b)
-    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs)
+    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
     # print(image_coords_pred)
     # plt.show()
@@ -231,7 +224,7 @@ def get_quasar_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
 
 def main():
-    fits_file = '/Users/danmuth/PycharmProjects/StrongLensing/data/lensed_quasar/WFI2033_F814W.fits'
+    fits_file = '/home/djm241/PycharmProjects/StrongLensing/data/lensed_quasar/WFI2033_F814W.fits'
 
     # Observed Image positions
     img_xobs, img_yobs, d = {}, {}, {}
@@ -240,12 +233,11 @@ def main():
     img_yobs['A'] = np.array([33.6946, 28.1791, 58.9579, 61.2290])
     d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
 
-
     pix_scale = 1.
     threshold = 0.8
-    pars = [ 40.05539297, 50.05217837,  5.47422693, 39.05739221, 50.16109415, 36.36017755,  0.97131709, -41.46158563]
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    # get_quasar_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    pars = [  51.63853012, 42.01441355,  4.19782456, 53.78385282, 40.6113934, 32.57773203,  0.66409627, 125.49369795]
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    get_quasar_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
     plt.show()
 

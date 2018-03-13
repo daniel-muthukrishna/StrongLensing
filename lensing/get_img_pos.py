@@ -50,13 +50,8 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
     lenses = [lens]
-    # # OR MY MODEL I have checked that they get the same answer
-    # x_lens, y_lens, theta, b, q = (51.5, 39.9, 1.1, 21.6, 1.0)
-    # pars = (x_lens, y_lens, theta, b, q)
 
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
-
-    # x_src, y_src = pred_positions(x, y, d=1, pars=pars)
 
     image_plane, image_coords_pred = {}, {}
     for name in ['A', 'B']:
@@ -67,7 +62,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
         plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
         plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_plane%s.png' % name))
-        image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold), pix_scale), sa[0])
+        image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold)[::-1], pix_scale), sa[0])
         print(name, image_coords_pred[name])
 
     fig = plt.figure()
@@ -146,8 +141,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 1000
-    nsteps = 4000
+    nwalkers = 100
+    nsteps = 1000
 
     # Define likelihood function
     @pymc.observed
@@ -164,7 +159,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
             # Get list of predicted image coordinates
             image_plane = srcs[name].pixeval(x_src, y_src)
-            image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold), pix_scale), sa[0])  # Only if brightness > threshold
+            image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold)[::-1], pix_scale), sa[0])  # Only if brightness > threshold
 
             if not image_coords_pred.size:  # If it's an empty list
                 return -1e30
@@ -191,7 +186,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
         return sum(lnlike.values())
 
     # Run MCMC
-    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=30)
+    sampler = myEmcee.Emcee(pars+[logL], cov, nwalkers=nwalkers, nthreads=44)
     sampler.sample(nsteps)
 
     # Plot chains
@@ -231,7 +226,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
     b = best
     print(b)
-    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs)
+    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
     # print(image_coords_pred)
     # plt.show()
@@ -239,25 +234,24 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
 
 def main():
-    fits_file_macs0451 = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
+    fits_file_macs0451 = '/home/djm241/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
+
     # Observed Image positions
     img_xobs, img_yobs, d = {}, {}, {}
     z_lens = 0.43
     img_xobs['A'] = np.array([2375.942110, 2378.5, 2379.816610, 2381.299088, 2384, 2385.927991, 2389.555816, 2457.694760, 2450.744242, 2442.833333, 2437.857924, 2433.064587, 2427.166666, 2424.099866, 2418.5, 2416.444081, 2462])
     img_yobs['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
-    d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
 
+    d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
     img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
     img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
 
-
-
     pix_scale = 10.
     threshold = 0.01
     pars = [3.05918823e+03,   3.04371268e+03,  5.13143731e+00,   3.01632534e+03, 3.27858853e+03, 5.57104944e+00, 3.10821667e+03, 3.24988038e+03, 1.06301319e+03,   6.76368456e-01,   7.40971734e+01]
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
     plt.show()
 
