@@ -14,10 +14,10 @@ def read_fits_image(fits_file):
     return image
 
 
-def plot_image(fits_file, fig):
+def plot_image(fits_file, fig, vmin=0, vmax=0.5):
     image = read_fits_image(fits_file)
 
-    plt.imshow(image, vmin=0, vmax=0.5, cmap='hot', origin='lower')
+    plt.imshow(image, vmin=vmin, vmax=vmax, cmap='hot', origin='lower')
 
 
 def plot_image_and_contours(fits_file, samples, fig_dir='', img_name=''):
