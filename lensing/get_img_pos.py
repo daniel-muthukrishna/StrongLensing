@@ -19,11 +19,14 @@ ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
 def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
-    xsrc, ysrc, sigsrc = {}, {}, {}
-    xsrc['A'], ysrc['A'], sigsrc['A'], xsrc['B'], ysrc['B'], sigsrc['B'], xlens, ylens, blens, qlens, plens = pars
+    names = img_xobs.keys()
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
-    names = xsrc.keys()
+
+    xsrc, ysrc, sigsrc = {}, {}, {}
+    for i, name in enumerate(names):
+        xsrc[name], ysrc[name], sigsrc[name] = pars[3*i : 3*(i+1)]
+    xlens, ylens, blens, qlens, plens = pars[-5:]
 
     # Define source positions as a Guassian surface brightness profile
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
@@ -67,7 +70,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in names:
-        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.3, c=next(colors))
+        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.5, c=next(colors))
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
 
@@ -228,7 +231,11 @@ def main():
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
+    pars = [3.16262049e+03, 3.05315887e+03, 3.33493933e+00, 3.20727741e+03,
+            2.82324330e+03, 7.89457923e+00, 3.26848215e+03, 2.95477656e+03,
+            9.28660800e-01, 3.25573300e+03, 2.98598760e+03, 5.45981363e+00,
+            3.28453396e+03, 3.36018684e+03, 1.23569466e+00, 3.26384999e+03,
+            2.88494833e+03, 1.22169449e+03, 4.91328573e-01, 1.50817176e+02]
     # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
     get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
