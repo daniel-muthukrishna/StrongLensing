@@ -7,6 +7,7 @@ import emcee
 from collections import OrderedDict
 from chainconsumer import ChainConsumer
 import pymc
+from collections import OrderedDict
 from dist_ang import scale_einstein_radius
 from mass_model import pred_positions
 from pylens import pylens, MassModels
@@ -70,14 +71,15 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in names:
-        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.5, c=next(colors))
+        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.5, c=next(colors), label=name)
+    plt.legend()  # loc='upper left', bbox_to_anchor=(1,1))
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
 
     # print(pylens.getImgPos(x0=0, y0=0, b=21.6, sx=54.83, sy=38.98, lenses=lenses))
 
 
-def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
+def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None, init=None):
     fig_dir = 'Figures/MACS0451/'
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
     names = img_xobs.keys()
@@ -85,11 +87,11 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
     pars, cov = [], []
     for name in names:
-        X1[name] = pymc.Uniform('X1%s' % name, 2300., 3900., value=3034.)
-        Y1[name] = pymc.Uniform('Y1%s' % name, 2400., 3600., value=3053.)
+        X1[name] = pymc.Uniform('X1%s' % name, 2300., 3900., value=init[name]['xsrc'])
+        Y1[name] = pymc.Uniform('Y1%s' % name, 2300., 3900., value=init[name]['ysrc'])
         Q1[name] = pymc.Uniform('Q1%s' % name, 1., 1., value=1.)
         P1[name] = pymc.Uniform('P1%s' % name, 0., 0., value=0.)
-        S1[name] = pymc.Uniform('N1%s' % name, 0., 10., value=3.)
+        S1[name] = pymc.Uniform('N1%s' % name, 0., 10., value=init[name]['sigsrc'])
         srcs[name] = SBObjects.Gauss('', {'x': X1[name], 'y': Y1[name], 'q': Q1[name],'pa': P1[name], 'sigma': S1[name]})
 
         pars += [X1[name], Y1[name], S1[name]]  # List of parameters
@@ -114,8 +116,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 100
-    nsteps = 1000
+    nwalkers = 2000
+    nsteps = 5000
 
     # Define likelihood function
     @pymc.observed
@@ -153,8 +155,10 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
             lnlike[name] = -0.5 * (np.sum((img_xpred_compare - img_xobs[name]) ** 2 + (img_ypred_compare - img_yobs[name]) ** 2))
 
-            print(name, img_xpred_compare, lnlike[name], float(srcs[name].x), float(srcs[name].y), float(srcs[name].sigma), float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
-            print(name, img_ypred_compare, lnlike[name], float(srcs[name].x), float(srcs[name].y), float(srcs[name].sigma), float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
+            # print(name, img_xpred_compare, lnlike[name], float(srcs[name].x), float(srcs[name].y), float(srcs[name].sigma), float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
+            # print(name, img_ypred_compare, lnlike[name], float(srcs[name].x), float(srcs[name].y), float(srcs[name].sigma), float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
+
+        print(sum(lnlike.values()), [(float(srcs[name].x), float(srcs[name].y), float(srcs[name].sigma)) for name in names], float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
 
         return sum(lnlike.values())
 
@@ -175,7 +179,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 200
+    burn = 600
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
@@ -198,7 +202,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     fig = c.plotter.plot_walks(convolve=100)
     fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'), transparent=False)
 
-    b = best
+    b = np.array(best)
     print(b)
     plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
@@ -207,37 +211,42 @@ def main():
     fits_file_macs0451 = '/home/djm241/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
 
     # Observed Image positions
-    img_xobs, img_yobs, d = {}, {}, {}
+    img_xobs, img_yobs, d, init = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
     z_lens = 0.43
     img_xobs['A'] = np.array([2375.942110, 2378.5, 2379.816610, 2381.299088, 2384, 2385.927991, 2389.555816, 2457.694760, 2450.744242, 2442.833333, 2437.857924, 2433.064587, 2427.166666, 2424.099866, 2418.5, 2416.444081, 2462])
     img_yobs['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
-
     d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
+    init['A'] = {'xsrc': 3492., 'ysrc': 3084., 'sigsrc': 8.06}
+
     img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
     img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
+    init['B'] = {'xsrc': 3002., 'ysrc': 2968., 'sigsrc': 2.17}
 
     img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
     img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
     d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
+    init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
     img_xobs['31'] = np.array([2933.063074, 3393.715824])
     img_yobs['31'] = np.array([2943.400421, 3398.196336])
     d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
+    init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
     img_xobs['41'] = np.array([3222.796159, 3227.700108])
     img_yobs['41'] = np.array([3550.903781, 3542.180780])
     d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
+    init['41'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [3.16262049e+03, 3.05315887e+03, 3.33493933e+00, 3.20727741e+03,
-            2.82324330e+03, 7.89457923e+00, 3.26848215e+03, 2.95477656e+03,
-            9.28660800e-01, 3.25573300e+03, 2.98598760e+03, 5.45981363e+00,
-            3.28453396e+03, 3.36018684e+03, 1.23569466e+00, 3.26384999e+03,
-            2.88494833e+03, 1.22169449e+03, 4.91328573e-01, 1.50817176e+02]
+    pars = [3.58912820e+03, 2.88897160e+03, 9.88269466e+00, 3.33105532e+03,
+            2.59306488e+03, 8.92770131e+00, 3.41313563e+03, 2.87755064e+03,
+            9.97310995e+00, 3.37298901e+03, 3.04731473e+03, 9.96573633e+00,
+            3.27903009e+03, 3.33643780e+03, 4.40663257e+00, 3.39754155e+03,
+            2.88361367e+03, 1.74267321e+03, 9.96187889e-01, 1.60007394e+02]
     # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
     plt.show()
 
