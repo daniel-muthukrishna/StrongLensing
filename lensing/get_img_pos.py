@@ -233,8 +233,8 @@ def main():
     d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
     init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
-    img_xobs['31'] = np.array([2933.063074, 3393.715824])
-    img_yobs['31'] = np.array([2943.400421, 3398.196336])
+    img_xobs['31'] = np.array([2933.063074, 2943.400421])
+    img_yobs['31'] = np.array([3393.715824, 3398.196336])
     d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
     init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
@@ -250,8 +250,8 @@ def main():
             7.06366905e+00, 3.20139065e+03, 3.13114661e+03, 9.99984203e+00,
             3.23107372e+03, 3.38745898e+03, 4.37147293e+00, 3.25301784e+03,
             3.17502487e+03, 1.30269952e+03, 6.92783533e-01, 9.32815646e+01]
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
     plt.show()
 
