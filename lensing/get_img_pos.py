@@ -66,13 +66,15 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         print(name, image_coords_pred[name])
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
+    markers = (marker for marker in ['x', '.', '*', '+', 'v'])
     fig = plt.figure()
     plot_image(fits_file, fig)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in names:
         plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.5, c=next(colors), label=name)
-    plt.legend()  # loc='upper left', bbox_to_anchor=(1,1))
+        plt.scatter(img_xobs[name], img_yobs[name], marker=next(markers), c='white', label="%s obs" % name)
+    plt.legend(loc='upper right')
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
 
@@ -208,7 +210,10 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
 
 def main():
+
     fits_file_macs0451 = '/home/djm241/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
+    if not os.path.isfile(fits_file_macs0451):
+        fits_file_macs0451 = '/Users/danmuth/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
 
     # Observed Image positions
     img_xobs, img_yobs, d, init = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
@@ -240,13 +245,13 @@ def main():
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [3.58912820e+03, 2.88897160e+03, 9.88269466e+00, 3.33105532e+03,
-            2.59306488e+03, 8.92770131e+00, 3.41313563e+03, 2.87755064e+03,
-            9.97310995e+00, 3.37298901e+03, 3.04731473e+03, 9.96573633e+00,
-            3.27903009e+03, 3.33643780e+03, 4.40663257e+00, 3.39754155e+03,
-            2.88361367e+03, 1.74267321e+03, 9.96187889e-01, 1.60007394e+02]
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
+    pars = [3.29220768e+03, 3.13593338e+03, 9.98048569e+00, 3.24119470e+03,
+            3.02902812e+03, 9.97230219e+00, 3.21912916e+03, 3.20127828e+03,
+            7.06366905e+00, 3.20139065e+03, 3.13114661e+03, 9.99984203e+00,
+            3.23107372e+03, 3.38745898e+03, 4.37147293e+00, 3.25301784e+03,
+            3.17502487e+03, 1.30269952e+03, 6.92783533e-01, 9.32815646e+01]
+    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
     plt.show()
 
