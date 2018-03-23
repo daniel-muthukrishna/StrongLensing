@@ -100,11 +100,11 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
         cov += [400., 400., 1.5]  # List of initial `scatter' for emcee
 
     # Define lens mass model
-    LX = pymc.Uniform('lx', 2900., 3400., value=3034)
-    LY = pymc.Uniform('ly', 2600., 3500., value=2981)
-    LB = pymc.Uniform('lb', 10., 2000., value=297.)
-    LQ = pymc.Uniform('lq', 0.2, 1., value=0.333)
-    LP = pymc.Uniform('lp', -180., 180., value=85.)
+    LX = pymc.Uniform('lx', 2900., 3400., value=3.13876545e+03)
+    LY = pymc.Uniform('ly', 2600., 3500., value=2.97884105e+03)
+    LB = pymc.Uniform('lb', 10., 2000., value=1.50779124e+03)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=4.90424861e-01)
+    LP = pymc.Uniform('lp', -180., 180., value=1.04010643e+02)
     XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
     XP = pymc.Uniform('xp', -180., 180., value=0.)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
@@ -118,8 +118,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 2000
-    nsteps = 5000
+    nwalkers = 200
+    nsteps = 300
 
     # Define likelihood function
     @pymc.observed
@@ -181,7 +181,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 600
+    burn = 50
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
@@ -204,7 +204,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     fig = c.plotter.plot_walks(convolve=100)
     fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'), transparent=False)
 
-    b = np.array(best)
+    b = list(best)
     print(b)
     plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
@@ -221,35 +221,31 @@ def main():
     img_xobs['A'] = np.array([2375.942110, 2378.5, 2379.816610, 2381.299088, 2384, 2385.927991, 2389.555816, 2457.694760, 2450.744242, 2442.833333, 2437.857924, 2433.064587, 2427.166666, 2424.099866, 2418.5, 2416.444081, 2462])
     img_yobs['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
     d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
-    init['A'] = {'xsrc': 3492., 'ysrc': 3084., 'sigsrc': 8.06}
+    init['A'] = {'xsrc': 3.49212756e+03, 'ysrc': 3.08381379e+03, 'sigsrc': 8.06085547e+00}
 
     img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
     img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
-    init['B'] = {'xsrc': 3002., 'ysrc': 2968., 'sigsrc': 2.17}
+    init['B'] = {'xsrc': 3.00192697e+03, 'ysrc': 2.96770223e+03, 'sigsrc': 2.17208719e+00}
 
-    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
-    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
-    d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
-    init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
-
-    img_xobs['31'] = np.array([2933.063074, 2943.400421])
-    img_yobs['31'] = np.array([3393.715824, 3398.196336])
-    d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
-    init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
-
-    img_xobs['41'] = np.array([3222.796159, 3227.700108])
-    img_yobs['41'] = np.array([3550.903781, 3542.180780])
-    d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
-    init['41'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+    # img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
+    # img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
+    # d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
+    # init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+    #
+    # img_xobs['31'] = np.array([2933.063074, 2943.400421])
+    # img_yobs['31'] = np.array([3393.715824, 3398.196336])
+    # d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
+    # init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+    #
+    # img_xobs['41'] = np.array([3222.796159, 3227.700108])
+    # img_yobs['41'] = np.array([3550.903781, 3542.180780])
+    # d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
+    # init['41'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [3.29220768e+03, 3.13593338e+03, 9.98048569e+00, 3.24119470e+03,
-            3.02902812e+03, 9.97230219e+00, 3.21912916e+03, 3.20127828e+03,
-            7.06366905e+00, 3.20139065e+03, 3.13114661e+03, 9.99984203e+00,
-            3.23107372e+03, 3.38745898e+03, 4.37147293e+00, 3.25301784e+03,
-            3.17502487e+03, 1.30269952e+03, 6.92783533e-01, 9.32815646e+01]
+    pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
     # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
     get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
@@ -262,3 +258,5 @@ if __name__=='__main__':
 
 # This was a good model for just sources A and B
 # pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
+# [  3.49174665e+03, 3.06707379e+03, 7.69209989e+00, 2.99932558e+03, 2.96874332e+03, 2.65278232e+00, 3.18109579e+03, 3.12620930e+03, 3.75289295e+00, 3.06960090e+03, 3.18527900e+03, 3.48326474e+00, 3.16193613e+03, 3.37938973e+03, 3.07316691e+00, 3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
+#        x, y = np.meshgrid(img_xobs[name], img_yobs[name])
