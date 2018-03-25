@@ -55,6 +55,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
     image_plane, image_coords_pred = {}, {}
     for name in names:
+        # x, y = np.meshgrid(img_xobs[name], img_yobs[name])
         x_src, y_src = pylens.getDeflections(lenses, [x, y], d=d[name])
         image_plane[name] = srcs[name].pixeval(x_src, y_src)
         plt.figure()
@@ -62,7 +63,8 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         plt.xlabel('%dx - %d pixels' % (pix_scale, sa[0]))
         plt.ylabel('%dy - %d pixels' % (pix_scale, sa[0]))
         plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_plane%s.png' % name))
-        image_coords_pred[name] = np.add(np.multiply(np.where(image_plane[name] > threshold)[::-1], pix_scale), sa[0])
+        image_indexes_pred = np.where(image_plane[name] > threshold)
+        image_coords_pred[name] = np.array([x[image_indexes_pred], y[image_indexes_pred]])
         print(name, image_coords_pred[name])
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
@@ -118,8 +120,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 200
-    nsteps = 300
+    nwalkers = 1000
+    nsteps = 3000
 
     # Define likelihood function
     @pymc.observed
@@ -132,11 +134,13 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
         for name in names:
             # Calculate deflections
+            # x, y = np.meshgrid(img_xobs[name], img_yobs[name])
             x_src, y_src = pylens.getDeflections(lenses, [x, y], d[name])
 
             # Get list of predicted image coordinates
             image_plane = srcs[name].pixeval(x_src, y_src)
-            image_coords_pred = np.add(np.multiply(np.where(image_plane > threshold)[::-1], pix_scale), sa[0])  # Only if brightness > threshold
+            image_indexes_pred = np.where(image_plane[name] > threshold)
+            image_coords_pred = np.array([x[image_indexes_pred], y[image_indexes_pred]]) # Only if brightness > threshold
 
             if not image_coords_pred.size:  # If it's an empty list
                 return -1e30
@@ -181,7 +185,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 50
+    burn = 200
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
@@ -245,9 +249,9 @@ def main():
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [3.49212756e+03,3.08381379e+03,8.06085547e+00,3.00192697e+03 ,2.96770223e+03,2.17208719e+00,3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
+    pars = [  3.49212756e+03, 3.08381379e+03, 8.06085547e+00, 3.00192697e+03, 2.96770223e+03, 2.17208719e+00, 3.13876545e+03, 2.97884105e+03, 1.50779124e+03, 4.90424861e-01, 1.04010643e+02]
+    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
     plt.show()
 
