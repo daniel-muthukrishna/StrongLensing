@@ -31,7 +31,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
         for name in names:
             x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var())
-        print(sum(lnlike_dict.values()))
+        print(sum(lnlike_dict.values()), float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
         return sum(lnlike_dict.values())
 
     # Run MCMC
@@ -55,6 +55,8 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
 
     # Plot parameter contours and mcmc chains
     param_names = ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
+    if len(pars) == 7:
+        param_names += ['$b_{shear}$', '$pa_{shear}$']
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
     c.configure(summary=True, cloud=True)
@@ -65,14 +67,18 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
 
     if fits_file:
         plot_image_and_contours(fits_file, samples, fig_dir, img_name, save=False)
-        plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir)
+        plot_source_and_pred_lens_positions(best, img_xobs, img_yobs, d, fig_dir)
 
     plt.show()
 
 
 def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, threshold=0.01):
     names = img_xobs.keys()
-    xlens, ylens, blens, qlens, plens = pars
+    try:
+        xlens, ylens, blens, qlens, plens = pars
+        bshear, pshear = 0., 0.
+    except ValueError:  # includes shear
+        xlens, ylens, blens, qlens, plens, bshear, pshear = pars
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 0., 5000., value=xlens)
@@ -80,11 +86,13 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
     LB = pymc.Uniform('lb', 0., 5000., value=blens)
     LQ = pymc.Uniform('lq', 0.2, 1., value=qlens)
     LP = pymc.Uniform('lp', -180., 180., value=plens)
-    XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
-    XP = pymc.Uniform('xp', -180., 180., value=0.)
+    XB = pymc.Uniform('xb', -200., 200., value=bshear)
+    XP = pymc.Uniform('xp', -180., 180., value=pshear)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
-    shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
     lenses = [lens]
+    if len(pars) == 7:
+        shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
+        lenses += [shear]
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
     markers = (marker for marker in ['x', 'o', '*', '+', 'v'])
@@ -92,7 +100,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
     x_src, y_src = {}, {}
     image_plane, image_coords_pred = {}, {}
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
-
+    print(float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
     sa = (2000, 4500)
     pix_scale = 10.
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
@@ -100,6 +108,9 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
         x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
         xs = np.median(x_src[name])
         ys = np.median(y_src[name])
+        lnlike = -0.5 * (x_src[name].var() + y_src[name].var())
+        print(float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
+        print(name, xs, ys, lnlike)
 
         col = next(colors)
         plt.scatter(img_xobs[name], img_yobs[name], marker=next(markers), c='white', label="%s obs" % name, alpha=0.8)
@@ -164,18 +175,26 @@ def macs0451_multiple_sources():
     LB = pymc.Uniform('lb', 10., 2000., value=1.50779124e+03)
     LQ = pymc.Uniform('lq', 0.2, 1., value=4.90424861e-01)
     LP = pymc.Uniform('lp', -180., 180., value=1.04010643e+02)
-    XB = pymc.Uniform('xb', -0.2, 0.2, value=0.)
+    XB = pymc.Uniform('xb', -200., 200., value=0.)
     XP = pymc.Uniform('xp', -180., 180., value=0.)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
-    # shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
+    shear = MassModels.ExtShear('', {'x': LX, 'y': LY, 'b': XB, 'pa': XP})
     lenses = [lens]
     pars = [LX, LY, LB, LQ, LP]
     cov = [400., 400., 400., 0.3, 50.]
+
+    # lenses += [shear]
+    # pars += [XB, XP]
+    # cov += [5., 50.]
+
     cov = np.array(cov)
 
     nwalkers = 1000
     nsteps = 3000
     burn = 200
+
+    best_lens = [3125.402837830007, 3069.6947816268207, 181.7467825143057, 0.5324488078055447, 87.2235065814847]
+    # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01)
 
     run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name)
 
@@ -184,6 +203,7 @@ if __name__ == '__main__':
     # lensed_quasar()
     # macs0451()
     macs0451_multiple_sources()
+
 
 
 
