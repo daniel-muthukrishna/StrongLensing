@@ -14,7 +14,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
-def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, nsteps=200, fits_file=None, img_name=''):
+def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, nsteps=200, burn=20, fits_file=None, img_name=''):
     names = img_xobs.keys()
 
     # Define likelihood function
@@ -31,7 +31,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
         for name in names:
             x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var())
-
+        print(sum(lnlike_dict.values()))
         return sum(lnlike_dict.values())
 
     # Run MCMC
@@ -51,7 +51,6 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 20
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Plot parameter contours and mcmc chains
@@ -95,27 +94,31 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
     X1, Y1, Q1, P1, S1, srcs = {}, {}, {}, {}, {}, {}
 
     sa = (2000, 4500)
-    pix_scale = 10
+    pix_scale = 10.
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
     for name in names:
         x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
         xs = np.median(x_src[name])
         ys = np.median(y_src[name])
 
+        col = next(colors)
+        plt.scatter(img_xobs[name], img_yobs[name], marker=next(markers), c='white', label="%s obs" % name, alpha=0.8)
+        plt.scatter(x_src[name], y_src[name], marker='.', alpha=0.5, c=col, label="%s pred src" % name)
+
+        # CALC IMG POS
+        # Assume gaussian surface brightness at (xs, ys)
         X1[name] = pymc.Uniform('X1%s' % name, 0., 5000., value=xs)
         Y1[name] = pymc.Uniform('Y1%s' % name, 0., 5000., value=ys)
         Q1[name] = pymc.Uniform('Q1%s' % name, 0.2, 1., value=1.)
         P1[name] = pymc.Uniform('P1%s' % name, -180., 180., value=0.)
         S1[name] = pymc.Uniform('N1%s' % name, 0., 10000., value=6.)
         srcs[name] = SBObjects.Gauss('', {'x': X1[name], 'y': Y1[name], 'q': Q1[name], 'pa': P1[name], 'sigma': S1[name]})
-
-        image_plane[name] = srcs[name].pixeval(x_src[name], y_src[name])
+        # Get Image plane
+        x_src_all, y_src_all = pylens.getDeflections(lenses, [x, y], d=d[name])
+        image_plane[name] = srcs[name].pixeval(x_src_all, y_src_all)
         image_indexes_pred = np.where(image_plane[name] > threshold)
         image_coords_pred[name] = np.array([x[image_indexes_pred], y[image_indexes_pred]])
-
-        plt.scatter(img_xobs[name], img_yobs[name], marker=next(markers), c='white', label="%s obs" % name, alpha=0.8)
-        # plt.scatter(x_src[name], y_src[name], marker='.', alpha=0.5, c=next(colors), label=name)
-        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.5, c=next(colors), label=name)
+        plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='x', alpha=0.5, c=col, label="%s pred img" % name)
 
     print(x_src, y_src)
     plt.legend(loc='upper right')
@@ -170,10 +173,11 @@ def macs0451_multiple_sources():
     cov = [400., 400., 400., 0.3, 50.]
     cov = np.array(cov)
 
-    nwalkers = 100
-    nsteps = 200
+    nwalkers = 1000
+    nsteps = 3000
+    burn = 200
 
-    run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, fits_file=fits_file, img_name=img_name)
+    run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name)
 
 
 if __name__ == '__main__':
