@@ -20,7 +20,7 @@ def plot_image(fits_file, fig, vmin=0, vmax=0.5):
     plt.imshow(image, vmin=vmin, vmax=vmax, cmap='hot', origin='lower')
 
 
-def plot_image_and_contours(fits_file, samples, fig_dir='', img_name=''):
+def plot_image_and_contours(fits_file, samples, fig_dir='', img_name='', save=True):
     fig = plt.figure()
 
     plot_image(fits_file, fig)
@@ -29,7 +29,8 @@ def plot_image_and_contours(fits_file, samples, fig_dir='', img_name=''):
     plt.contour(counts.transpose(), extent=[xbins.min(), xbins.max(), ybins.min(), ybins.max()])
     plt.xlim(1700, 4900)
     plt.ylim(1650, 4450)
-    plt.savefig(os.path.join(fig_dir, 'image_with_contours%s.png' % img_name))
+    if save:
+        plt.savefig(os.path.join(fig_dir, 'image_with_contours%s.png' % img_name))
 
 
 

@@ -55,7 +55,6 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
     image_plane, image_coords_pred = {}, {}
     for name in names:
-        # x, y = np.meshgrid(img_xobs[name], img_yobs[name])
         x_src, y_src = pylens.getDeflections(lenses, [x, y], d=d[name])
         image_plane[name] = srcs[name].pixeval(x_src, y_src)
         plt.figure()
@@ -68,14 +67,14 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         print(name, image_coords_pred[name])
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
-    markers = (marker for marker in ['x', '.', '*', '+', 'v'])
+    markers = (marker for marker in ['x', 'o', '*', '+', 'v'])
     fig = plt.figure()
     plot_image(fits_file, fig)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in names:
+        plt.scatter(img_xobs[name], img_yobs[name], marker=next(markers), c='white', label="%s obs" % name, alpha=0.8)
         plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='.', alpha=0.5, c=next(colors), label=name)
-        plt.scatter(img_xobs[name], img_yobs[name], marker=next(markers), c='white', label="%s obs" % name)
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(ROOT_DIR, fig_dir, 'image_with_predicted_image_plane.png'))
 
@@ -134,12 +133,12 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
         for name in names:
             # Calculate deflections
-            # x, y = np.meshgrid(img_xobs[name], img_yobs[name])
+            # x, y = np.array([[img_xobs[name]], [img_yobs[name]]])
             x_src, y_src = pylens.getDeflections(lenses, [x, y], d[name])
 
             # Get list of predicted image coordinates
             image_plane = srcs[name].pixeval(x_src, y_src)
-            image_indexes_pred = np.where(image_plane[name] > threshold)
+            image_indexes_pred = np.where(image_plane > threshold)
             image_coords_pred = np.array([x[image_indexes_pred], y[image_indexes_pred]]) # Only if brightness > threshold
 
             if not image_coords_pred.size:  # If it's an empty list
@@ -209,7 +208,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     fig.savefig(os.path.join(ROOT_DIR, fig_dir, 'source_pos_mcmc_walks.png'), transparent=False)
 
     b = list(best)
-    print(b)
+    print("best:", b)
     plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
 
 
@@ -232,24 +231,24 @@ def main():
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
     init['B'] = {'xsrc': 3.00192697e+03, 'ysrc': 2.96770223e+03, 'sigsrc': 2.17208719e+00}
 
-    # img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
-    # img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
-    # d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
-    # init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
-    #
-    # img_xobs['31'] = np.array([2933.063074, 2943.400421])
-    # img_yobs['31'] = np.array([3393.715824, 3398.196336])
-    # d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
-    # init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
-    #
-    # img_xobs['41'] = np.array([3222.796159, 3227.700108])
-    # img_yobs['41'] = np.array([3550.903781, 3542.180780])
-    # d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
-    # init['41'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
+    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
+    d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
+    init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+
+    img_xobs['31'] = np.array([2933.063074, 2943.400421])
+    img_yobs['31'] = np.array([3393.715824, 3398.196336])
+    d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
+    init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+
+    img_xobs['41'] = np.array([3222.796159, 3227.700108])
+    img_yobs['41'] = np.array([3550.903781, 3542.180780])
+    d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
+    init['41'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [  3.49212756e+03, 3.08381379e+03, 8.06085547e+00, 3.00192697e+03, 2.96770223e+03, 2.17208719e+00, 3.13876545e+03, 2.97884105e+03, 1.50779124e+03, 4.90424861e-01, 1.04010643e+02]
+    pars = [  3.49174665e+03, 3.06707379e+03, 7.69209989e+00, 2.99932558e+03, 2.96874332e+03, 2.65278232e+00, 3.18109579e+03, 3.12620930e+03, 3.75289295e+00, 3.06960090e+03, 3.18527900e+03, 3.48326474e+00, 3.16193613e+03, 3.37938973e+03, 3.07316691e+00, 3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
     plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
     # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
