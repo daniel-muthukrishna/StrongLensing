@@ -104,6 +104,8 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
     sa = (2000, 4500)
     pix_scale = 10.
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
+    plt.xlim(sa[0], sa[1])
+    plt.ylim(sa[0], sa[1])
     for name in names:
         x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
         xs = np.median(x_src[name])
@@ -153,21 +155,25 @@ def macs0451_multiple_sources():
     img_yobs['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
     d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
 
-    img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471])
-    img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799])
+    img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471, 3497.163625, 3486.371962])
+    img_yobs['B'] = np.array([3482.795501, 3482.854177, 2592.719350, 2590.191799, 3075.107748, 3069.305065])
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
 
-    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
-    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
+    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488]) #3490.676982, 3498.161408
+    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024]) #3447.666750, 3440.809843
     d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
 
-    img_xobs['31'] = np.array([2933.063074, 2943.400421])
-    img_yobs['31'] = np.array([3393.715824, 3398.196336])
+    img_xobs['31'] = np.array([2933.063074, 2943.400421]) #2890.687234, 2878.906523
+    img_yobs['31'] = np.array([3393.715824, 3398.196336]) #3044.431729, 3042.460964
     d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
 
     img_xobs['41'] = np.array([3222.796159, 3227.700108])
     img_yobs['41'] = np.array([3550.903781, 3542.180780])
     d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
+
+    # img_xobs['C'] = np.array([3799.999263, 3794.5, 3863.057095, 3861.1])
+    # img_yobs['C'] = np.array([3358.972702, 3367.9, 3059.195359, 3069.9])
+    # d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=?)
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2400., 4000., value=3.13876545e+03)
@@ -189,8 +195,8 @@ def macs0451_multiple_sources():
 
     cov = np.array(cov)
 
-    nwalkers = 1000
-    nsteps = 3000
+    nwalkers = 2000
+    nsteps = 6000
     burn = 200
 
     best_lens = [3125.402837830007, 3069.6947816268207, 181.7467825143057, 0.5324488078055447, 87.2235065814847]
