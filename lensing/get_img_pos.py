@@ -223,7 +223,7 @@ def main():
     z_lens = 0.43
     img_xobs['A'] = np.array([2375.942110, 2378.5, 2379.816610, 2381.299088, 2384, 2385.927991, 2389.555816, 2457.694760, 2450.744242, 2442.833333, 2437.857924, 2433.064587, 2427.166666, 2424.099866, 2418.5, 2416.444081, 2462])
     img_yobs['A'] = np.array([3038.016677, 3024, 3012.367933, 2999.365293, 2983.5, 2970.435199, 2955.945319, 2737.545077, 2752.305849, 2766.166666, 2782.058508, 2795.293450, 2811.166666, 2823.079067, 2837.5, 2846.943113, 2728])
-    d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.01)
+    d['A'] = scale_einstein_radius(z_lens=z_lens, z_src=2.013)
     init['A'] = {'xsrc': 3.49212756e+03, 'ysrc': 3.08381379e+03, 'sigsrc': 8.06085547e+00}
 
     img_xobs['B'] = np.array([3276.693717, 3261.382557, 3427.351819, 3417.043471, 3497.163625, 3486.371962])
@@ -231,13 +231,13 @@ def main():
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
     init['B'] = {'xsrc': 3.00192697e+03, 'ysrc': 2.96770223e+03, 'sigsrc': 2.17208719e+00}
 
-    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
-    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
+    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488, 3490.676982, 3498.161408])
+    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024, 3447.666750, 3440.809843])
     d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
     init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
-    img_xobs['31'] = np.array([2933.063074, 2943.400421])
-    img_yobs['31'] = np.array([3393.715824, 3398.196336])
+    img_xobs['31'] = np.array([2933.063074, 2943.400421, 2890.687234, 2878.906523])
+    img_yobs['31'] = np.array([3393.715824, 3398.196336, 3044.431729, 3042.460964])
     d['31'] = scale_einstein_radius(z_lens=z_lens, z_src=1.904)
     init['31'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
@@ -249,8 +249,8 @@ def main():
     pix_scale = 10.
     threshold = 0.01
     pars = [  3.49174665e+03, 3.06707379e+03, 7.69209989e+00, 2.99932558e+03, 2.96874332e+03, 2.65278232e+00, 3.18109579e+03, 3.12620930e+03, 3.75289295e+00, 3.06960090e+03, 3.18527900e+03, 3.48326474e+00, 3.16193613e+03, 3.37938973e+03, 3.07316691e+00, 3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
+    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
     plt.show()
 
