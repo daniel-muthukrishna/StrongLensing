@@ -119,8 +119,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 1000
-    nsteps = 3000
+    nwalkers = 2000
+    nsteps = 5000
 
     # Define likelihood function
     @pymc.observed
@@ -249,8 +249,8 @@ def main():
     pix_scale = 10.
     threshold = 0.01
     pars = [  3.49174665e+03, 3.06707379e+03, 7.69209989e+00, 2.99932558e+03, 2.96874332e+03, 2.65278232e+00, 3.18109579e+03, 3.12620930e+03, 3.75289295e+00, 3.06960090e+03, 3.18527900e+03, 3.48326474e+00, 3.16193613e+03, 3.37938973e+03, 3.07316691e+00, 3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
 
     plt.show()
 
