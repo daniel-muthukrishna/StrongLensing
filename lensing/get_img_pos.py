@@ -121,6 +121,7 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     # MCMC setup
     nwalkers = 2000
     nsteps = 5000
+    burn = 200
 
     # Define likelihood function
     @pymc.observed
@@ -184,7 +185,6 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
             pylab.plot(samples[:, j, i])
 
     # Trim initial samples (ie the burn-in) and concatenate chains
-    burn = 200
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Get best fit parameters
@@ -249,6 +249,7 @@ def main():
     img_xobs['C'] = np.array([3799.999263, 3794.5, 3863.057095, 3861.1])
     img_yobs['C'] = np.array([3358.972702, 3367.9, 3059.195359, 3069.9])
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
+    init['C'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
     pix_scale = 10.
     threshold = 0.01
