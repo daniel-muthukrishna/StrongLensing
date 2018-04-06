@@ -94,8 +94,8 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
         shear = MassModels.ExtShear('',{'x':LX,'y':LY,'b':XB,'pa':XP})
         lenses += [shear]
 
-    colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
-    markers = (marker for marker in ['x', 'o', '*', '+', 'v'])
+    colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2', 'lime'])
+    markers = (marker for marker in ['x', 'o', '*', '+', 'v', 'D'])
 
     x_src, y_src = {}, {}
     image_plane, image_coords_pred = {}, {}
