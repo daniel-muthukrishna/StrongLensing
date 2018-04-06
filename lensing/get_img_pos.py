@@ -83,7 +83,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
 
 def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None, init=None):
-    fig_dir = 'Figures/MACS0451/'
+    fig_dir = 'Figures/MACS0451_min_pred-obs_getimgpy/'
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
     names = img_xobs.keys()
     # Define source positions as a Guassian surface brightness profile

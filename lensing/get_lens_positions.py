@@ -139,7 +139,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
 
 def macs0451_multiple_sources():
-    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_2/')
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_min_src_pos_var_getlenspy/')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
 
