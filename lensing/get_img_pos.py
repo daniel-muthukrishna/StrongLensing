@@ -231,8 +231,8 @@ def main():
     d['B'] = scale_einstein_radius(z_lens=z_lens, z_src=1.405)
     init['B'] = {'xsrc': 3.00192697e+03, 'ysrc': 2.96770223e+03, 'sigsrc': 2.17208719e+00}
 
-    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488, 3490.676982, 3498.161408])
-    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024, 3447.666750, 3440.809843])
+    img_xobs['11'] = np.array([3557.178601, 3548.271886, 3541.407488])
+    img_yobs['11'] = np.array([3363.943860, 3375.285957, 3385.515024])
     d['11'] = scale_einstein_radius(z_lens=z_lens, z_src=2.06)
     init['11'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
 
@@ -245,6 +245,10 @@ def main():
     img_yobs['41'] = np.array([3550.903781, 3542.180780])
     d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
     init['41'] = {'xsrc': 3034, 'ysrc': 3053, 'sigsrc': 3.}
+
+    img_xobs['C'] = np.array([3799.999263, 3794.5, 3863.057095, 3861.1])
+    img_yobs['C'] = np.array([3358.972702, 3367.9, 3059.195359, 3069.9])
+    d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     pix_scale = 10.
     threshold = 0.01

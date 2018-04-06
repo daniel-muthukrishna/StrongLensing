@@ -171,9 +171,9 @@ def macs0451_multiple_sources():
     img_yobs['41'] = np.array([3550.903781, 3542.180780])
     d['41'] = scale_einstein_radius(z_lens=z_lens, z_src=1.810)
 
-    # img_xobs['C'] = np.array([3799.999263, 3794.5, 3863.057095, 3861.1])
-    # img_yobs['C'] = np.array([3358.972702, 3367.9, 3059.195359, 3069.9])
-    # d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=?)
+    img_xobs['C'] = np.array([3799.999263, 3794.5, 3863.057095, 3861.1])
+    img_yobs['C'] = np.array([3358.972702, 3367.9, 3059.195359, 3069.9])
+    d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     # Define lens mass model
     LX = pymc.Uniform('lx', 2400., 4000., value=3.13876545e+03)
