@@ -118,8 +118,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
     # MCMC setup
     nwalkers = 2000
-    nsteps = 5000
-    burn = 200
+    nsteps = 7000
+    burn = 300
 
     # Define likelihood function
     @pymc.observed
