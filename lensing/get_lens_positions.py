@@ -199,9 +199,9 @@ def macs0451_multiple_sources():
 
     cov = np.array(cov)
 
-    nwalkers = 2000
-    nsteps = 6000
-    burn = 200
+    nwalkers = 3000
+    nsteps = 10000
+    burn = 500
 
     best_lens = [3125.402837830007, 3069.6947816268207, 181.7467825143057, 0.5324488078055447, 87.2235065814847]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file)
