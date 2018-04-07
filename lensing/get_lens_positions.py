@@ -61,9 +61,9 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
     c.add_chain(samples, parameters=param_names)
     c.configure(summary=True, cloud=True)
     fig = c.plotter.plot()
-    fig.savefig(os.path.join(fig_dir, 'parameter_contours%s.png'), transparent=False)
+    fig.savefig(os.path.join(fig_dir, 'parameter_contours.png'), transparent=False)
     fig = c.plotter.plot_walks(convolve=100)
-    fig.savefig(os.path.join(fig_dir, 'mcmc_walks%s.png'), transparent=False)
+    fig.savefig(os.path.join(fig_dir, 'mcmc_walks.png'), transparent=False)
 
     if fits_file:
         fig = plt.figure(figsize=(13, 13))
