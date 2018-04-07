@@ -68,7 +68,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
     markers = (marker for marker in ['x', 'o', '*', '+', 'v'])
-    fig = plt.figure()
+    fig = plt.figure(figsize=(13, 13))
     plot_image(fits_file, fig)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
@@ -84,6 +84,8 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
 def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None, init=None):
     fig_dir = 'Figures/MACS0451_min_pred-obs_getimgpy/'
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
     names = img_xobs.keys()
     # Define source positions as a Guassian surface brightness profile

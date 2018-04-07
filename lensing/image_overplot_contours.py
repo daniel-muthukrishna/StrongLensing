@@ -20,9 +20,7 @@ def plot_image(fits_file, fig, vmin=0, vmax=0.5):
     plt.imshow(image, vmin=vmin, vmax=vmax, cmap='hot', origin='lower')
 
 
-def plot_image_and_contours(fits_file, samples, fig_dir='', img_name='', save=True):
-    fig = plt.figure()
-
+def plot_image_and_contours(fits_file, samples, fig_dir='', img_name='', save=True, fig=None):
     plot_image(fits_file, fig)
 
     counts, xbins, ybins = np.histogram2d(samples[:, 0], samples[:, 1], bins=100, normed=LogNorm())
