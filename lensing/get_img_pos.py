@@ -19,9 +19,8 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
-def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None):
+def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None, fig_dir=None):
     names = img_xobs.keys()
-    fig_dir = 'Figures/MACS0451/'
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
 
     xsrc, ysrc, sigsrc = {}, {}, {}
@@ -82,10 +81,7 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
     # print(pylens.getImgPos(x0=0, y0=0, b=21.6, sx=54.83, sy=38.98, lenses=lenses))
 
 
-def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None, init=None):
-    fig_dir = 'Figures/MACS0451_min_pred-obs_getimgpy/'
-    if not os.path.exists(fig_dir):
-        os.makedirs(fig_dir)
+def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=None, img_yobs=None, d=None, init=None, fig_dir=None):
     sa = (2000, 4500)  # search area is 2000 pixels to 5000 pixels
     names = img_xobs.keys()
     # Define source positions as a Guassian surface brightness profile
@@ -211,10 +207,13 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
 
     b = list(best)
     print("best:", b)
-    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
+    plot_img_pos(pars=b, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file, img_xobs=img_xobs, img_yobs=img_yobs, d=d, fig_dir=fig_dir)
 
 
 def main():
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_min_pred-obs_getimgpy/')
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
 
     fits_file_macs0451 = '/home/djm241/PycharmProjects/StrongLensing/data/MACS0451/MACS0451_F110W.fits'
     if not os.path.isfile(fits_file_macs0451):
@@ -256,8 +255,8 @@ def main():
     pix_scale = 10.
     threshold = 0.01
     pars = [  3.49174665e+03, 3.06707379e+03, 7.69209989e+00, 2.99932558e+03, 2.96874332e+03, 2.65278232e+00, 3.18109579e+03, 3.12620930e+03, 3.75289295e+00, 3.06960090e+03, 3.18527900e+03, 3.48326474e+00, 3.16193613e+03, 3.37938973e+03, 3.07316691e+00, 3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, fig_dir=fig_dir)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init, fig_dir=fig_dir)
 
     plt.show()
 

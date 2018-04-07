@@ -14,7 +14,7 @@ def read_fits_image(fits_file):
     return image
 
 
-def plot_image(fits_file, fig, vmin=0, vmax=0.5):
+def plot_image(fits_file, fig=None, vmin=0, vmax=0.5):
     image = read_fits_image(fits_file)
 
     plt.imshow(image, vmin=vmin, vmax=vmax, cmap='hot', origin='lower')

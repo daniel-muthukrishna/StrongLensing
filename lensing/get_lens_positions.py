@@ -68,12 +68,15 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
     if fits_file:
         fig = plt.figure(figsize=(13, 13))
         plot_image_and_contours(fits_file, samples, fig_dir, img_name, save=False, fig=fig)
-        plot_source_and_pred_lens_positions(best, img_xobs, img_yobs, d, fig_dir)
+        plot_source_and_pred_lens_positions(best, img_xobs, img_yobs, d, fig_dir, plotimage=False)
 
     plt.show()
 
 
-def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, threshold=0.01):
+def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=False, fits_file=None):
+    if plotimage:
+        fig = plt.figure(figsize=(13, 13))
+        plot_image(fits_file, fig)
     names = img_xobs.keys()
     try:
         xlens, ylens, blens, qlens, plens = pars
@@ -201,7 +204,7 @@ def macs0451_multiple_sources():
     burn = 200
 
     best_lens = [3125.402837830007, 3069.6947816268207, 181.7467825143057, 0.5324488078055447, 87.2235065814847]
-    # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01)
+    # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file)
 
     run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name)
 
