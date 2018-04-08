@@ -12,10 +12,10 @@ yGal = 3447
 
 C = colorImage.ColorImage()
 
-img = C.createModel(b,g,r,center=(yGal,xGal))
-
-pylab.imshow(img,origin='lower',interpolation='nearest')
-pylab.show()
+# img = C.createModel(b,g,r,center=(yGal,xGal))
+#
+# pylab.imshow(img,origin='lower',interpolation='nearest')
+# pylab.show()
 
 # Change the non-linear scaling
 
@@ -23,4 +23,6 @@ C.nonlin = 50.
 img = C.createModel(b,g,r,center=(yGal,xGal))
 
 pylab.imshow(img,origin='lower',interpolation='nearest')
+pylab.xlim([2000, 4500])
+pylab.ylim([2000, 4500])
 pylab.show()
