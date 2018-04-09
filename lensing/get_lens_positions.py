@@ -190,13 +190,10 @@ def macs0451_multiple_sources():
     lenses = [lens]
     pars = [LX, LY, LB, LQ, LP]
     cov = [400., 400., 400., 0.3, 50.]
+
     lenses += [shear]
     pars += [XB, XP]
     cov += [40., 30.]
-
-    # lenses += [shear]
-    # pars += [XB, XP]
-    # cov += [5., 50.]
 
     cov = np.array(cov)
 
