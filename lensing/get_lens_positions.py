@@ -31,7 +31,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
         for name in names:
             x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var())
-        print(sum(lnlike_dict.values()), float(lens.x), float(lens.y), float(lens.b), float(lens.q), float(lens.pa))
+        print(sum(lnlike_dict.values()), float(lenses[0].x), float(lenses[0].y), float(lenses[0].b), float(lenses[0].q), float(lenses[0].pa))
         return sum(lnlike_dict.values())
 
     # Run MCMC
@@ -141,7 +141,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
 
 def macs0451_multiple_sources():
-    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_min_src_pos_var_getlenspy/')
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_min_src_pos_var_getlenspy_with_shear/')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
 
@@ -190,6 +190,9 @@ def macs0451_multiple_sources():
     lenses = [lens]
     pars = [LX, LY, LB, LQ, LP]
     cov = [400., 400., 400., 0.3, 50.]
+    lenses += [shear]
+    pars += [XB, XP]
+    cov += [40., 30.]
 
     # lenses += [shear]
     # pars += [XB, XP]
@@ -197,8 +200,8 @@ def macs0451_multiple_sources():
 
     cov = np.array(cov)
 
-    nwalkers = 3000
-    nsteps = 10000
+    nwalkers = 500
+    nsteps = 30000
     burn = 500
 
     best_lens = [  3.21895080e+03,   3.03726175e+03,   6.67192222e+02, 2.26586238e-01,   5.91357933e+00]
