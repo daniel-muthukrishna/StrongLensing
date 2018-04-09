@@ -65,8 +65,8 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         image_coords_pred[name] = np.array([x[image_indexes_pred], y[image_indexes_pred]])
         print(name, image_coords_pred[name])
 
-    colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
-    markers = (marker for marker in ['x', 'o', '*', '+', 'v'])
+    colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2', 'lime'])
+    markers = (marker for marker in ['x', 'o', '*', '+', 'v', 'D'])
     fig = plt.figure(figsize=(13, 13))
     plot_image(fits_file, fig)
     plt.xlim(sa[0], sa[1])
@@ -117,8 +117,8 @@ def get_macs0451_img_pos(pix_scale=1., threshold=0.8, fits_file=None, img_xobs=N
     x, y = np.meshgrid(np.arange(sa[0], sa[1], pix_scale), np.arange(sa[0], sa[1], pix_scale))
 
     # MCMC setup
-    nwalkers = 2000
-    nsteps = 7000
+    nwalkers = 500
+    nsteps = 12000
     burn = 500
 
     # Define likelihood function
@@ -254,9 +254,9 @@ def main():
 
     pix_scale = 10.
     threshold = 0.01
-    pars = [  3.49174665e+03, 3.06707379e+03, 7.69209989e+00, 2.99932558e+03, 2.96874332e+03, 2.65278232e+00, 3.18109579e+03, 3.12620930e+03, 3.75289295e+00, 3.06960090e+03, 3.18527900e+03, 3.48326474e+00, 3.16193613e+03, 3.37938973e+03, 3.07316691e+00, 3.13876545e+03,2.97884105e+03 ,1.50779124e+03,4.90424861e-01,1.04010643e+02]
-    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, fig_dir=fig_dir)
-    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init, fig_dir=fig_dir)
+    pars = [3083.0963675890002, 3012.9659200187452, 9.274199819176504, 2935.7312523534315, 2980.022978513245, 9.516471883191802, 2960.822962654103, 2985.161211282648, 4.668818315029342, 3095.920823673981, 2569.0022956107036, 9.981948632162698, 2958.162977377794, 2918.2048175366353, 9.225110851188651, 3136.9024025602475, 3031.458386704898, 9.886979021360126, 2978.4393744234867, 2989.080245119008, 1019.9543423975571, 0.9482099390730243, 97.29513658927824]
+    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, fig_dir=fig_dir)
+    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init, fig_dir=fig_dir)
 
     plt.show()
 
