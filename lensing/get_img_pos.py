@@ -255,8 +255,8 @@ def main():
     pix_scale = 10.
     threshold = 0.01
     pars = [3083.0963675890002, 3012.9659200187452, 9.274199819176504, 2935.7312523534315, 2980.022978513245, 9.516471883191802, 2960.822962654103, 2985.161211282648, 4.668818315029342, 3095.920823673981, 2569.0022956107036, 9.981948632162698, 2958.162977377794, 2918.2048175366353, 9.225110851188651, 3136.9024025602475, 3031.458386704898, 9.886979021360126, 2978.4393744234867, 2989.080245119008, 1019.9543423975571, 0.9482099390730243, 97.29513658927824]
-    plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, fig_dir=fig_dir)
-    # get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init, fig_dir=fig_dir)
+    # plot_img_pos(pars, pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, fig_dir=fig_dir)
+    get_macs0451_img_pos(pix_scale=pix_scale, threshold=threshold, fits_file=fits_file_macs0451, img_xobs=img_xobs, img_yobs=img_yobs, d=d, init=init, fig_dir=fig_dir)
 
     plt.show()
 
