@@ -191,12 +191,14 @@ class SIS(MassProfile):
         self.y = y
         self.b = b
 
-    def deflections(self,x,y):
+    def deflections(self,x,y, d=1):
+        b = self.b * d
+
         dx = x-self.x
         dy = y-self.y
         amp = (dx**2+dy**2)**0.5
         amp[amp==0] = 1e-7
-        return self.b*dx/amp,self.b*dy/amp
+        return b*dx/amp,b*dy/amp
 
 
 class ExtShear(MassProfile):
