@@ -2,7 +2,10 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from itertools import takewhile
+
+from image_overplot_contours import plot_image
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
@@ -22,14 +25,27 @@ def read_sextractor_output(filepath):
     return sex
 
 
-def get_positions(filepath):
+def get_positions(filepath, colour1=None, colour2=None, colour_limits=None, fits_file=None, fig_dir='.'):
     sex = read_sextractor_output(filepath)
     x = sex.X_IMAGE
     y = sex.Y_IMAGE
 
-    # plt.figure()
-    # plt.scatter(x, y)
+    plt.figure()
+    if fits_file is not None:
+        plot_image(fits_file, vmin=0, vmax=0.35)
+    plt.scatter(x, y, marker='o', c='b', alpha=0.2)
 
+    if colour1 is not None:
+        (x1, y1), (x2, y2) = colour_limits
+        mask = (colour1 > x1) & (colour1 < x2) & (colour2 > y1) & (colour2 < y2)
+        x = x[mask]
+        y = y[mask]
+
+    plt.scatter(x, y, marker='+', c='g', alpha=0.8)
+
+    plt.xlim(min(x), max(x))
+    plt.ylim(min(x), max(y))
+    plt.savefig(os.path.join(fig_dir, 'cluster_members'))
     return x, y
 
 
@@ -42,9 +58,9 @@ def get_colour(filepath1, filepath2):
     return colour
 
 
-def plot_colour_colour(colour1, colour2, name1='', name2='', fig_dir='.', fpathpos=None):
-    plt.figure()
-    plt.scatter(colour1, colour2)
+def plot_colour_colour(colour1, colour2, name1='', name2='', fig_dir='.', colour_limits=None, fpathpos=None):
+    fig, ax = plt.subplots(1)
+    ax.scatter(colour1, colour2, marker='.', alpha=0.3)
 
     if fpathpos is not None:
         xpos, ypos = get_positions(fpathpos)
@@ -57,11 +73,15 @@ def plot_colour_colour(colour1, colour2, name1='', name2='', fig_dir='.', fpathp
                 bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
                 arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
 
-    plt.xlabel(name1)
-    plt.ylabel(name2)
-    plt.xlim(-0.1, 2)
-    plt.ylim(-0.1, 2)
-    plt.savefig(os.path.join(fig_dir, 'colour_colour_plot.png'))
+    if colour_limits is not None:
+        (x1, y1), (x2, y2) = colour_limits
+        rect = patches.Rectangle(xy=(x1, y1), width=x2-x1, height=y2-y1, fill=False)
+        ax.add_patch(rect)
+
+    ax.set(xlabel=name1, ylabel=name2)
+    ax.set_xlim(-0.1, 2)
+    ax.set_ylim(-0.1, 2)
+    fig.savefig(os.path.join(fig_dir, 'colour_colour_plot.png'))
 
 
 def main():
@@ -73,10 +93,13 @@ def main():
     colour1 = get_colour(fpath606, fpath814)
     colour2 = get_colour(fpath814, fpath110)
 
-    plot_colour_colour(colour1, colour2, name1='606A - 814A', name2='814A - 1100A', fig_dir=fig_dir)#, fpathpos=fpath110)
-    get_positions(fpath110)
+    colour_limits = [(0.525, 0.2), (0.73, 0.33)]
+
+    plot_colour_colour(colour1, colour2, name1='606A - 814A', name2='814A - 1100A', fig_dir=fig_dir, colour_limits=colour_limits)#, fpathpos=fpath110)
+    get_positions(fpath110, colour1, colour2, colour_limits=colour_limits, fits_file=os.path.join(ROOT_DIR, 'data/MACS0451/MACS0451_F110W.fits'))
     plt.show()
 
 
 if __name__ == '__main__':
     main()
+    # sex MACS0451_F110W.fits,MACS0451_F814W.fits -CATALOG_NAME 'sex_814.asc'
