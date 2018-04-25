@@ -108,7 +108,8 @@ def main():
     axlims = [(-10, 800), (-0.1, 2)]
 
     plot_colour_colour(colour1, colour2, name1='814A', name2='606A - 814A', fig_dir=fig_dir, colour_limits=colour_limits, addsavename='_814', axlims=axlims)  #, fpathpos=fpath110)
-    get_positions(fpath110, colour1, colour2, colour_limits=colour_limits, fits_file=os.path.join(ROOT_DIR, 'data/MACS0451/MACS0451_F110W.fits'), fig_dir=fig_dir, addsavename='_814')
+    x, y = get_positions(fpath110, colour1, colour2, colour_limits=colour_limits, fits_file=os.path.join(ROOT_DIR, 'data/MACS0451/MACS0451_F110W.fits'), fig_dir=fig_dir, addsavename='_814')
+    print(list(zip(x, y)))
     plt.show()
 
 
