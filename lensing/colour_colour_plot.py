@@ -25,10 +25,17 @@ def read_sextractor_output(filepath):
     return sex
 
 
-def get_positions(filepath, colour1=None, colour2=None, colour_limits=None, fits_file=None, fig_dir='.', addsavename=''):
+def get_positions(filepath, colour1=None, colour2=None, colour_limits=None, fits_file=None, fig_dir='.', addsavename='', returnflux=False, ignore_points=()):
     sex = read_sextractor_output(filepath)
+    ignore_indexes = []
+    for xignore, yignore in ignore_points:
+        ignore_indexes += list(np.where(sex.X_IMAGE == xignore)[0] & np.where(sex.Y_IMAGE == yignore)[0])
+    sex = sex.drop(ignore_indexes)
+
     x = sex.X_IMAGE
     y = sex.Y_IMAGE
+    flux = sex.FLUX_ISO
+
 
     plt.figure()
     if fits_file is not None:
@@ -40,13 +47,18 @@ def get_positions(filepath, colour1=None, colour2=None, colour_limits=None, fits
         mask = (colour1 > x1) & (colour1 < x2) & (colour2 > y1) & (colour2 < y2)
         x = x[mask]
         y = y[mask]
+        flux = flux[mask]
 
     plt.scatter(x, y, marker='+', c='g', alpha=0.9)
 
     plt.xlim(min(x), max(x))
-    plt.ylim(min(x), max(y))
+    plt.ylim(min(y), max(y))
     plt.savefig(os.path.join(fig_dir, 'cluster_members{}'.format(addsavename)))
-    return x, y
+
+    if returnflux:
+        return x, y, flux
+    else:
+        return x, y
 
 
 def get_colour(filepath1, filepath2):
@@ -70,21 +82,23 @@ def plot_colour_colour(colour1, colour2, name1='', name2='', fig_dir='.', colour
     fig, ax = plt.subplots(1)
     ax.scatter(colour1, colour2, marker='.', alpha=0.3)
 
-    if fpathpos is not None:
-        xpos, ypos = get_positions(fpathpos)
-        labels = np.core.defchararray.add(np.around(xpos).values.astype(str), np.around(ypos).values.astype(str))
-        for label, x, y in zip(labels, colour1, colour2):
-            plt.annotate(
-                label,
-                xy=(x, y), xytext=(-20, 20),
-                textcoords='offset points', ha='right', va='bottom',
-                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
-                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
-
     if colour_limits is not None:
         (x1, x2), (y1, y2) = colour_limits
         rect = patches.Rectangle(xy=(x1, y1), width=x2-x1, height=y2-y1, fill=False)
         ax.add_patch(rect)
+
+    if fpathpos is not None:
+        xpos, ypos = get_positions(fpathpos)
+        labels = np.core.defchararray.add(np.around(xpos).values.astype(str), np.around(ypos).values.astype(str))
+        for label, x, y in zip(labels, colour1, colour2):
+            print(label)
+            if True:  # x1 < x < x2 and y1 < y < y2:  # '2070.' in label:
+                ax.annotate(
+                    label,
+                    xy=(x, y), xytext=(-20, 20),
+                    textcoords='offset points', ha='right', va='bottom',
+                    bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
 
     ax.set(xlabel=name1, ylabel=name2)
     if axlims:
@@ -108,8 +122,9 @@ def main():
     axlims = [(-10, 800), (-0.1, 2)]
 
     plot_colour_colour(colour1, colour2, name1='814A', name2='606A - 814A', fig_dir=fig_dir, colour_limits=colour_limits, addsavename='_814', axlims=axlims)  #, fpathpos=fpath110)
-    x, y = get_positions(fpath110, colour1, colour2, colour_limits=colour_limits, fits_file=os.path.join(ROOT_DIR, 'data/MACS0451/MACS0451_F110W.fits'), fig_dir=fig_dir, addsavename='_814')
+    x, y, flux = get_positions(fpath110, colour1, colour2, colour_limits=colour_limits, fits_file=os.path.join(ROOT_DIR, 'data/MACS0451/MACS0451_F110W.fits'), fig_dir=fig_dir, addsavename='_814', returnflux=True, ignore_points=((2070.2122, 1812.9967),))
     print(list(zip(x, y)))
+    print(list(flux))
     plt.show()
 
 
