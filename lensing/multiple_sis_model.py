@@ -188,8 +188,8 @@ def macs0451_multiple_sources():
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     # Define overall lens SIE mass model
-    LX = pymc.Uniform('lx', 2400., 4000., value=3.13876545e+03)
-    LY = pymc.Uniform('ly', 2000., 3700., value=2.97884105e+03)
+    LX = pymc.Uniform('lx', 2800., 3700., value=3.13876545e+03)
+    LY = pymc.Uniform('ly', 2600., 3400., value=2.97884105e+03)
     LB = pymc.Uniform('lb', 10., 2000., value=1.50779124e+03)
     LQ = pymc.Uniform('lq', 0.2, 1., value=4.90424861e-01)
     LP = pymc.Uniform('lp', -180., 180., value=1.04010643e+02)
@@ -214,15 +214,15 @@ def macs0451_multiple_sources():
         cov = np.array(cov)
 
         for (lx, ly), flux in zip(masses_pos, masses_flux):
-            LX = pymc.Uniform('lx', 2600., 3700., value=lx)
-            LY = pymc.Uniform('ly', 2600., 3400., value=ly)
+            LX = pymc.Uniform('lx', 1000., 5000., value=lx)
+            LY = pymc.Uniform('ly', 1000., 5000., value=ly)
             LB = slope * np.log(flux) + intercept
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
     else:
         for lx, ly in masses_pos:
-            LX = pymc.Uniform('lx', 2600., 3700., value=lx)
-            LY = pymc.Uniform('ly', 2600., 3400., value=ly)
+            LX = pymc.Uniform('lx', 1000., 5000., value=lx)
+            LY = pymc.Uniform('ly', 1000., 5000., value=ly)
             LB = pymc.Uniform('lb', 0., 2000., value=50.)
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
@@ -230,9 +230,9 @@ def macs0451_multiple_sources():
             cov += [30.]
         cov = np.array(cov)
 
-    nwalkers = 1000
-    nsteps = 4000
-    burn = 50
+    nwalkers = 600
+    nsteps = 2000
+    burn = 300
 
     best_lens = [2730, 2005, 495, 0.2, 179.1, 17.2, 6.6]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
