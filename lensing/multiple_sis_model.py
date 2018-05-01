@@ -14,7 +14,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.join(SCRIPT_DIR, '..')
 
 
-def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, nsteps=200, burn=20, fits_file=None, img_name='', mass_pos=None):
+def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, nsteps=200, burn=20, fits_file=None, img_name='', mass_pos=None, flux_dependent_b=False, masses_flux=None):
     names = img_xobs.keys()
 
     # Define likelihood function
@@ -27,7 +27,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
 
         x_src, y_src = {}, {}
         lnlike_dict = {}
-
+        print(pars[0].value, pars[1].value)
         for name in names:
             x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var())
@@ -66,22 +66,31 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
     if fits_file:
         fig = plt.figure(figsize=(13, 13))
         plot_image_and_contours(fits_file, samples, fig_dir, img_name, save=False, fig=fig)
-        plot_source_and_pred_lens_positions(best, img_xobs, img_yobs, d, fig_dir, plotimage=False, mass_pos=mass_pos)
+        plot_source_and_pred_lens_positions(best, img_xobs, img_yobs, d, fig_dir, plotimage=False, mass_pos=mass_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
 
 
-def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=False, fits_file=None, mass_pos=None):
+def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=False, fits_file=None, mass_pos=None, flux_dependent_b=False, masses_flux=None):
     if plotimage:
         fig = plt.figure(figsize=(13, 13))
         plot_image(fits_file, fig)
     names = img_xobs.keys()
 
     lenses = []
-    for b, (lx, ly) in zip(pars, mass_pos):
-        LX = pymc.Uniform('lx', 0., 5000., value=lx)
-        LY = pymc.Uniform('ly', 0., 5000., value=ly)
-        LB = pymc.Uniform('lb', 0., 5000., value=b)
-        lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
-        lenses += [lens]
+    if flux_dependent_b:
+        for (lx, ly), flux in zip(mass_pos, masses_flux):
+            slope, intercept = pars
+            LX = pymc.Uniform('lx', 0., 5000., value=lx)
+            LY = pymc.Uniform('ly', 0., 5000., value=ly)
+            LB = slope * flux ** 8 + intercept
+            lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
+            lenses += [lens]
+    else:
+        for b, (lx, ly) in zip(pars, mass_pos):
+            LX = pymc.Uniform('lx', 0., 5000., value=lx)
+            LY = pymc.Uniform('ly', 0., 5000., value=ly)
+            LB = pymc.Uniform('lb', 0., 5000., value=b)
+            lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
+            lenses += [lens]
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2', 'lime'])
     markers = (marker for marker in ['x', 'o', '*', '+', 'v', 'D'])
@@ -107,8 +116,8 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
         # CALC IMG POS
         # Assume gaussian surface brightness at (xs, ys)
-        X1[name] = pymc.Uniform('X1%s' % name, 0., 5000., value=xs)
-        Y1[name] = pymc.Uniform('Y1%s' % name, 0., 5000., value=ys)
+        X1[name] = pymc.Uniform('X1%s' % name, 0., 50000., value=xs)
+        Y1[name] = pymc.Uniform('Y1%s' % name, 0., 50000., value=ys)
         Q1[name] = pymc.Uniform('Q1%s' % name, 0.2, 1., value=1.)
         P1[name] = pymc.Uniform('P1%s' % name, -180., 180., value=0.)
         S1[name] = pymc.Uniform('N1%s' % name, 0., 10000., value=6.)
@@ -116,6 +125,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
         # Get Image plane
         x_src_all, y_src_all = pylens.getDeflections(lenses, [x, y], d=d[name])
         image_plane[name] = srcs[name].pixeval(x_src_all, y_src_all)
+        # newfig.imshow(image_plane[name], interpolation='nearest', origin='lower')
         image_indexes_pred = np.where(image_plane[name] > threshold)
         image_coords_pred[name] = np.array([x[image_indexes_pred], y[image_indexes_pred]])
         plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='x', alpha=0.5, c=col, label="%s pred img" % name)
@@ -170,21 +180,11 @@ def macs0451_multiple_sources():
     lenses = []
     pars = []
     cov = []
-    flux_dependent_b = False
+    flux_dependent_b = True
     if flux_dependent_b:
-        for lx, ly in masses_pos:
-            LX = pymc.Uniform('lx', 1000., 5000., value=lx)
-            LY = pymc.Uniform('ly', 1000., 5000., value=ly)
-            LB = pymc.Uniform('lb', 10., 2000., value=150.)
-            lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
-            lenses += [lens]
-            pars += [LB]
-            cov += [50.]
-        cov = np.array(cov)
-    else:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
         slope = pymc.Uniform('slope', -1000., 1000., value=1.)
-        intercept = pymc.Uniform('intercept', -1000., 1000., value=0.)
+        intercept = pymc.Uniform('intercept', 0., 1000., value=0.)
         pars += [slope, intercept]
         cov += [5., 5.]
         cov = np.array(cov)
@@ -192,18 +192,28 @@ def macs0451_multiple_sources():
         for (lx, ly), flux in zip(masses_pos, masses_flux):
             LX = pymc.Uniform('lx', 1000., 5000., value=lx)
             LY = pymc.Uniform('ly', 1000., 5000., value=ly)
-            LB = slope * flux ** 8 + intercept
+            LB = slope * flux**8 + intercept
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
+    else:
+        for lx, ly in masses_pos:
+            LX = pymc.Uniform('lx', 1000., 5000., value=lx)
+            LY = pymc.Uniform('ly', 1000., 5000., value=ly)
+            LB = pymc.Uniform('lb', 0., 2000., value=50.)
+            lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
+            lenses += [lens]
+            pars += [LB]
+            cov += [30.]
+        cov = np.array(cov)
 
     nwalkers = 1000
-    nsteps = 4000
+    nsteps = 5000
     burn = 200
 
-    # best_lens = [  3.21895080e+03,   3.03726175e+03,   6.67192222e+02, 2.26586238e-01,   5.91357933e+00]
-    # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file)
+    best_lens = [24.7, 0.05]
+    # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
 
-    run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos)
+    run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
 
 
 if __name__ == '__main__':
