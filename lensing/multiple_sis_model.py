@@ -71,7 +71,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
 
 def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=False, fits_file=None, mass_pos=None, flux_dependent_b=False, masses_flux=None):
     if plotimage:
-        fig = plt.figure(figsize=(13, 13))
+        fig = plt.figure('image_and_position', figsize=(13, 13))
         plot_image(fits_file, fig)
     names = img_xobs.keys()
 
@@ -116,6 +116,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in names:
+        plt.figure('image_and_position')
         x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
         xs = np.median(x_src[name])
         ys = np.median(y_src[name])
@@ -137,10 +138,12 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
         # Get Image plane
         x_src_all, y_src_all = pylens.getDeflections(lenses, [x, y], d=d[name])
         image_plane[name] = srcs[name].pixeval(x_src_all, y_src_all)
-        # newfig.imshow(image_plane[name], interpolation='nearest', origin='lower')
         image_indexes_pred = np.where(image_plane[name] > threshold)
         image_coords_pred[name] = np.array([x[image_indexes_pred], y[image_indexes_pred]])
         plt.scatter(image_coords_pred[name][0], image_coords_pred[name][1], marker='x', alpha=0.5, c=col, label="%s pred img" % name)
+        plt.figure(name)
+        plt.title(name)
+        plt.imshow(image_plane[name], interpolation='nearest', origin='lower')
 
     print(x_src, y_src)
     plt.legend(loc='upper right')
@@ -227,11 +230,11 @@ def macs0451_multiple_sources():
             cov += [30.]
         cov = np.array(cov)
 
-    nwalkers = 500
-    nsteps = 3000
+    nwalkers = 1000
+    nsteps = 4000
     burn = 50
 
-    best_lens = [24.7, 0.05]
+    best_lens = [2730, 2005, 495, 0.2, 179.1, 17.2, 6.6]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
 
     run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
