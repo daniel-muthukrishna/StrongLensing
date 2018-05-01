@@ -94,6 +94,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
             LB = slope * np.log(flux) + intercept
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
+            print('lens einstein radius', lens.b)
     else:
         for b, (lx, ly) in zip(pars[5:], mass_pos):
             LX = pymc.Uniform('lx', 0., 5000., value=lx)
@@ -101,6 +102,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
             LB = pymc.Uniform('lb', 0., 5000., value=b)
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
+            print('lens einstein radius', lens.b)
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2', 'lime'])
     markers = (marker for marker in ['x', 'o', '*', '+', 'v', 'D'])
@@ -202,8 +204,8 @@ def macs0451_multiple_sources():
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
-        slope = pymc.Uniform('slope', -1000., 1000., value=1.)
-        intercept = pymc.Uniform('intercept', -1000., 1000., value=0.)
+        slope = pymc.Uniform('slope', -100., 1000., value=1.)
+        intercept = pymc.Uniform('intercept', 0., 1000., value=0.)
         pars += [slope, intercept]
         cov += [5., 5.]
         cov = np.array(cov)
@@ -225,8 +227,8 @@ def macs0451_multiple_sources():
             cov += [30.]
         cov = np.array(cov)
 
-    nwalkers = 1000
-    nsteps = 2000
+    nwalkers = 500
+    nsteps = 3000
     burn = 50
 
     best_lens = [24.7, 0.05]
