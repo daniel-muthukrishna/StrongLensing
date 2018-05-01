@@ -214,15 +214,15 @@ def macs0451_multiple_sources():
         cov = np.array(cov)
 
         for (lx, ly), flux in zip(masses_pos, masses_flux):
-            LX = pymc.Uniform('lx', 1000., 5000., value=lx)
-            LY = pymc.Uniform('ly', 1000., 5000., value=ly)
+            LX = pymc.Uniform('lx', 2600., 3700., value=lx)
+            LY = pymc.Uniform('ly', 2600., 3400., value=ly)
             LB = slope * np.log(flux) + intercept
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
     else:
         for lx, ly in masses_pos:
-            LX = pymc.Uniform('lx', 1000., 5000., value=lx)
-            LY = pymc.Uniform('ly', 1000., 5000., value=ly)
+            LX = pymc.Uniform('lx', 2600., 3700., value=lx)
+            LY = pymc.Uniform('ly', 2600., 3400., value=ly)
             LB = pymc.Uniform('lb', 0., 2000., value=50.)
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
