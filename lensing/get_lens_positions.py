@@ -67,7 +67,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
 
     if fits_file:
         fig = plt.figure(figsize=(13, 13))
-        plot_image_and_contours(fits_file, samples, fig_dir, img_name, save=False, fig=fig)
+        plot_image_and_contours(fits_file, samples, fig_dir, img_name, save=False, figname=fig)
         plot_source_and_pred_lens_positions(best, img_xobs, img_yobs, d, fig_dir, plotimage=False)
 
 

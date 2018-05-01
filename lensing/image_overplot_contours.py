@@ -14,14 +14,15 @@ def read_fits_image(fits_file):
     return image
 
 
-def plot_image(fits_file, fig=None, vmin=0, vmax=0.5):
+def plot_image(fits_file, figname=None, vmin=0, vmax=0.5):
+    if figname is not None:
+        plt.figure(figname)
     image = read_fits_image(fits_file)
-
     plt.imshow(image, vmin=vmin, vmax=vmax, cmap='hot', origin='lower')
 
 
-def plot_image_and_contours(fits_file, samples, fig_dir='', img_name='', save=True, fig=None):
-    plot_image(fits_file, fig)
+def plot_image_and_contours(fits_file, samples, fig_dir='', img_name='', save=True, figname=None):
+    plot_image(fits_file, figname)
 
     counts, xbins, ybins = np.histogram2d(samples[:, 0], samples[:, 1], bins=100, normed=LogNorm())
     plt.contour(counts.transpose(), extent=[xbins.min(), xbins.max(), ybins.min(), ybins.max()])

@@ -67,8 +67,8 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2', 'lime'])
     markers = (marker for marker in ['x', 'o', '*', '+', 'v', 'D'])
-    fig = plt.figure(figsize=(13, 13))
-    plot_image(fits_file, fig)
+    fig = plt.figure('image_and_position', figsize=(13, 13))
+    plot_image(fits_file, figname='image_and_position')
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in names:

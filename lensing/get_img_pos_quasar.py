@@ -63,8 +63,8 @@ def plot_img_pos(pars, pix_scale=1., threshold=0.8, fits_file=None, img_xobs=Non
         print(img_ypred_compare, img_yobs[name], lnlike)
 
     colors = (col for col in ['#1f77b4', '#2ca02c', '#9467bd', '#17becf', '#e377c2'])
-    fig = plt.figure()
-    plot_image(fits_file, fig, vmax=10.)
+    fig = plt.figure('image_and_position')
+    plot_image(fits_file, figname='image_and_position', vmax=10.)
     plt.xlim(sa[0], sa[1])
     plt.ylim(sa[0], sa[1])
     for name in ['A']:
