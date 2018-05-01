@@ -53,7 +53,8 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
     samples = samples[burn:].reshape(((nsteps-burn) * nwalkers, len(pars)))
 
     # Plot parameter contours and mcmc chains
-    param_names = [par.__name__ for par in pars]
+    param_names = ['$x_{lens}$', '$y_{lens}$', '$b_{lens}$', '$q_{lens}$', '$pa_{lens}$']
+    param_names += [par.__name__ for par in pars[5:]]
     c = ChainConsumer()
     c.add_chain(samples, parameters=param_names)
     c.configure(summary=True, cloud=True)
@@ -74,17 +75,27 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
         plot_image(fits_file, fig)
     names = img_xobs.keys()
 
-    lenses = []
+    xlens, ylens, blens, qlens, plens = pars[0:5]
+
+    # Define lens mass model
+    LX = pymc.Uniform('lx', 0., 5000., value=xlens)
+    LY = pymc.Uniform('ly', 0., 5000., value=ylens)
+    LB = pymc.Uniform('lb', 0., 5000., value=blens)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=qlens)
+    LP = pymc.Uniform('lp', -180., 180., value=plens)
+    lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
+    lenses = [lens]
+
     if flux_dependent_b:
         for (lx, ly), flux in zip(mass_pos, masses_flux):
-            slope, intercept = pars
+            slope, intercept = pars[5:]
             LX = pymc.Uniform('lx', 0., 5000., value=lx)
             LY = pymc.Uniform('ly', 0., 5000., value=ly)
-            LB = slope * flux ** 8 + intercept
+            LB = slope * np.log(flux) + intercept
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
     else:
-        for b, (lx, ly) in zip(pars, mass_pos):
+        for b, (lx, ly) in zip(pars[5:], mass_pos):
             LX = pymc.Uniform('lx', 0., 5000., value=lx)
             LY = pymc.Uniform('ly', 0., 5000., value=ly)
             LB = pymc.Uniform('lb', 0., 5000., value=b)
@@ -135,7 +146,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
 
 def macs0451_multiple_sources():
-    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_multiple_sis_model/')
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/MACS0451_multiple_sis_model_log/')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
 
@@ -171,19 +182,28 @@ def macs0451_multiple_sources():
     img_yobs['C'] = np.array([3358.972702, 3367.9, 3059.195359, 3069.9])
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
+    # Define overall lens SIE mass model
+    LX = pymc.Uniform('lx', 2400., 4000., value=3.13876545e+03)
+    LY = pymc.Uniform('ly', 2000., 3700., value=2.97884105e+03)
+    LB = pymc.Uniform('lb', 10., 2000., value=1.50779124e+03)
+    LQ = pymc.Uniform('lq', 0.2, 1., value=4.90424861e-01)
+    LP = pymc.Uniform('lp', -180., 180., value=1.04010643e+02)
+    lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
+    lenses = [lens]
+    pars = [LX, LY, LB, LQ, LP]
+    cov = [400., 400., 400., 0.3, 50.]
+
+    # Define individual lens models for each major light source that are in the same section on the color magnitude plot
     masses_pos = [(2965.5288, 1933.9563), (2049.9021, 2192.387), (3141.9883, 2217.7527), (4607.7075, 2167.5984), (3549.3555, 2162.8872), (2068.0742, 2216.7585), (4268.5576, 2319.8298), (4663.2427, 2328.0593), (3323.5115, 2425.0659), (2221.5608, 2512.1736), (2950.5073, 2629.0552), (2981.6868, 2652.0073), (2033.7075, 2788.6877), (1949.4614, 2728.1226), (4241.4492, 2750.6653), (3361.4163, 2940.6357), (3173.2246, 2941.2471), (4516.8184, 2908.7585), (3382.9978, 2781.5076), (2898.4788, 2840.1252), (1942.7456, 2877.2471), (2899.8923, 2899.4895), (4041.6626, 2880.5015), (4162.7109, 2886.1875), (3989.6919, 2935.3879), (3303.6855, 2938.9148), (3968.1621, 2968.2993), (4613.0122, 2897.4099), (4649.1987, 2862.4167), (3261.9656, 2921.2605), (3386.9814, 2911.084), (3414.7791, 2936.4338), (2298.7419, 2965.8403), (3427.4221, 3072.7476), (3227.8262, 3095.5388), (3275.3184, 3263.1567), (4284.9653, 3240.2017), (3227.1746, 3250.7136), (2487.8906, 3230.6677), (2559.6587, 3186.9429), (2017.4875, 3195.2239), (2740.4167, 3208.8381), (3146.053, 3237.4194), (2401.4067, 3203.291), (2808.7485, 3427.9224), (4322.1392, 3317.6938), (3397.1904, 3356.5364), (3074.5276, 3448.4421), (3954.7253, 3590.8535), (3116.0625, 3523.1008), (2640.4075, 3624.4426), (3082.8025, 3548.231), (4583.7495, 3697.9534), (2768.9014, 3617.7961), (2639.042, 3615.2815), (2255.7852, 3900.9021), (2476.9795, 4028.5874)]
     masses_flux = np.array([378.1141, 1527.1989999999998, 773.9109, 294.5334, 275.1775, 346.9561, 780.823, 201.5256, 244.387, 391.2144, 954.7488, 273.3743, 2777.741, 636.8357, 317.5356, 2693.8559999999998, 3436.873, 1680.48, 219.1088, 591.2639, 624.871, 590.7428, 695.0563, 485.1097, 901.0128, 947.5237, 939.0687, 290.4246, 226.5177, 717.8644, 325.5481, 285.941, 266.1354, 232.6961, 257.5104, 1943.4389999999999, 957.1483, 1277.3110000000001, 821.7504, 362.3544, 343.2694, 381.5304, 260.1786, 306.7749, 1675.8770000000002, 442.8735, 549.5866, 910.3147, 979.7011, 389.7068, 707.3599, 433.32599999999996, 1193.312, 204.4583, 218.7119, 451.3262, 333.3452])
     masses_flux = masses_flux/200.
     print(masses_flux)
 
-    lenses = []
-    pars = []
-    cov = []
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
         slope = pymc.Uniform('slope', -1000., 1000., value=1.)
-        intercept = pymc.Uniform('intercept', 0., 1000., value=0.)
+        intercept = pymc.Uniform('intercept', -1000., 1000., value=0.)
         pars += [slope, intercept]
         cov += [5., 5.]
         cov = np.array(cov)
@@ -191,7 +211,7 @@ def macs0451_multiple_sources():
         for (lx, ly), flux in zip(masses_pos, masses_flux):
             LX = pymc.Uniform('lx', 1000., 5000., value=lx)
             LY = pymc.Uniform('ly', 1000., 5000., value=ly)
-            LB = slope * flux**8 + intercept
+            LB = slope * np.log(flux) + intercept
             lens = MassModels.SIS('', {'x': LX, 'y': LY, 'b': LB})
             lenses += [lens]
     else:
@@ -206,8 +226,8 @@ def macs0451_multiple_sources():
         cov = np.array(cov)
 
     nwalkers = 1000
-    nsteps = 5000
-    burn = 200
+    nsteps = 2000
+    burn = 50
 
     best_lens = [24.7, 0.05]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux)
