@@ -27,7 +27,6 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
 
         x_src, y_src = {}, {}
         lnlike_dict = {}
-        print(pars[0].value, pars[1].value)
         for name in names:
             x_src[name], y_src[name] = pylens.getDeflections(lenses, [img_xobs[name], img_yobs[name]], d[name])
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var())
