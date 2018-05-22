@@ -26,7 +26,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
         for lens in lenses:
             lens.setPars()
             if lens.b < 0:
-                return -np.inf
+                return -1e99
 
         x_src, y_src = {}, {}
         lnlike_dict = {}
