@@ -218,11 +218,11 @@ def macs0451_multiple_sources():
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     # Define overall lens SIE mass model
-    LX = pymc.Uniform('lx', 2600., 3800., value=3.13876545e+03)
-    LY = pymc.Uniform('ly', 2500., 3500., value=2.97884105e+03)
-    LB = pymc.Uniform('lb', 100., 3000., value=1.50779124e+03)
-    LQ = pymc.Uniform('lq', 0.01, 1., value=4.90424861e-01)
-    LP = pymc.Uniform('lp', -180., 180., value=1.04010643e+02)
+    LX = pymc.Uniform('lx', 2600., 3800., value=3.29154942e+03)
+    LY = pymc.Uniform('ly', 2500., 3500., value=3.04014997e+03)
+    LB = pymc.Uniform('lb', 100., 3000., value=2.97055148e+02)
+    LQ = pymc.Uniform('lq', 0.01, 1., value=1.00003790e-01)
+    LP = pymc.Uniform('lp', -180., 180., value=2.22832253e+00)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     lenses = [lens]
     pars = [LX, LY, LB, LQ, LP]
@@ -237,8 +237,8 @@ def macs0451_multiple_sources():
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
-        slope = pymc.Uniform('slope', 0., 1000., value=1.)
-        intercept = pymc.Uniform('intercept', -100., 1000., value=0.)
+        slope = pymc.Uniform('slope', 0., 1000., value=7.41973341e+01)
+        intercept = pymc.Uniform('intercept', -100., 1000., value=-6.40458851e+01)
         # n = pymc.Uniform('n', 0., 12., value=4.)
         pars += [slope, intercept]
         cov += [5., 5.]
@@ -265,7 +265,9 @@ def macs0451_multiple_sources():
     nsteps = 8000
     burn = 4000
 
-    best_lens = [2730, 2005, 495, 0.2, 179.1, 17.2, 6.6]
+    best_lens = [3.29154942e+03,   3.04014997e+03,   2.97055148e+02,
+                 1.00003790e-01,   2.22832253e+00,   7.41973341e+01,
+                 -6.40458851e+01]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, sa=sa, pix_scale=pix_scale)
 
     run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, threshold=0.01, sa=sa, pix_scale=pix_scale)
