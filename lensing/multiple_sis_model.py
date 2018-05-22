@@ -25,6 +25,8 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
         Minimise the variance in the source position from all images. """
         for lens in lenses:
             lens.setPars()
+            if lens.b < 0:
+                return -np.inf
 
         x_src, y_src = {}, {}
         lnlike_dict = {}
@@ -237,8 +239,8 @@ def macs0451_multiple_sources():
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
-        slope = pymc.Uniform('slope', 0., 1000., value=7.41973341e+01)
-        intercept = pymc.Uniform('intercept', -100., 1000., value=-6.40458851e+01)
+        slope = pymc.Uniform('slope', 0., 1000., value=1.41973341e+01)
+        intercept = pymc.Uniform('intercept', -100., 1000., value=0)
         # n = pymc.Uniform('n', 0., 12., value=4.)
         pars += [slope, intercept]
         cov += [5., 5.]
@@ -266,11 +268,11 @@ def macs0451_multiple_sources():
     burn = 4000
 
     best_lens = [3.29154942e+03,   3.04014997e+03,   2.97055148e+02,
-                 1.00003790e-01,   2.22832253e+00,   7.41973341e+01,
-                 -6.40458851e+01]
-    # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, sa=sa, pix_scale=pix_scale)
+                 1.00003790e-01,   2.22832253e+00,   1.41973341e+01,
+                 0.]
+    plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, sa=sa, pix_scale=pix_scale)
 
-    run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, threshold=0.01, sa=sa, pix_scale=pix_scale)
+    # run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, threshold=0.01, sa=sa, pix_scale=pix_scale)
 
 
 if __name__ == '__main__':
