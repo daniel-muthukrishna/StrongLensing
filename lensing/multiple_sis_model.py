@@ -34,10 +34,11 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
             # CALC IMG POS
             xs = np.median(x_src[name])
             ys = np.median(y_src[name])
+
             # Assume gaussian surface brightness at (xs, ys)
-            X1 = pymc.Uniform('X1', 0., 50000., value=xs)
-            Y1 = pymc.Uniform('Y1', 0., 50000., value=ys)
-            Q1 = pymc.Uniform('Q1', 0.2, 1., value=1.)
+            X1 = pymc.Uniform('X1', -500000., 500000., value=xs)
+            Y1 = pymc.Uniform('Y1', -500000., 500000., value=ys)
+            Q1 = pymc.Uniform('Q1', 0., 1., value=1.)
             P1 = pymc.Uniform('P1', -180., 180., value=0.)
             S1 = pymc.Uniform('N1', 0., 10000., value=6.)
             srcs = SBObjects.Gauss('', {'x': X1, 'y': Y1, 'q': Q1, 'pa': P1, 'sigma': S1})
@@ -47,6 +48,8 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
             image_coords_pred = np.array([x[image_indexes_pred], y[image_indexes_pred]])
             num_pred_points = image_coords_pred.shape[1]
             num_obs_points = len(img_xobs[name])
+            if num_pred_points < num_obs_points:
+                num_pred_points = num_obs_points
             penalise_more_points_weight = (num_pred_points/num_obs_points)
 
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var()) * penalise_more_points_weight
@@ -149,7 +152,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
         # Assume gaussian surface brightness at (xs, ys)
         X1[name] = pymc.Uniform('X1%s' % name, 0., 50000., value=xs)
         Y1[name] = pymc.Uniform('Y1%s' % name, 0., 50000., value=ys)
-        Q1[name] = pymc.Uniform('Q1%s' % name, 0.2, 1., value=1.)
+        Q1[name] = pymc.Uniform('Q1%s' % name, 0., 1., value=1.)
         P1[name] = pymc.Uniform('P1%s' % name, -180., 180., value=0.)
         S1[name] = pymc.Uniform('N1%s' % name, 0., 10000., value=6.)
         srcs[name] = SBObjects.Gauss('', {'x': X1[name], 'y': Y1[name], 'q': Q1[name], 'pa': P1[name], 'sigma': S1[name]})
@@ -175,7 +178,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
 
 def macs0451_multiple_sources():
-    fig_dir = os.path.join(ROOT_DIR, 'Figures/penaliseMACS0451_multiple_sis_model_log/')
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/penalise_nozeropredsMACS0451_multiple_sis_model_log/')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
 
@@ -215,10 +218,10 @@ def macs0451_multiple_sources():
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     # Define overall lens SIE mass model
-    LX = pymc.Uniform('lx', 3100., 3500., value=3.13876545e+03)
-    LY = pymc.Uniform('ly', 2800., 3150., value=2.97884105e+03)
+    LX = pymc.Uniform('lx', 2600., 3800., value=3.13876545e+03)
+    LY = pymc.Uniform('ly', 2500., 3500., value=2.97884105e+03)
     LB = pymc.Uniform('lb', 100., 3000., value=1.50779124e+03)
-    LQ = pymc.Uniform('lq', 0.1, 1., value=4.90424861e-01)
+    LQ = pymc.Uniform('lq', 0.01, 1., value=4.90424861e-01)
     LP = pymc.Uniform('lp', -180., 180., value=1.04010643e+02)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     lenses = [lens]
@@ -234,8 +237,8 @@ def macs0451_multiple_sources():
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
-        slope = pymc.Uniform('slope', -100., 1000., value=1.)
-        intercept = pymc.Uniform('intercept', 0., 1000., value=0.)
+        slope = pymc.Uniform('slope', 0., 1000., value=1.)
+        intercept = pymc.Uniform('intercept', -100., 1000., value=0.)
         # n = pymc.Uniform('n', 0., 12., value=4.)
         pars += [slope, intercept]
         cov += [5., 5.]
@@ -258,9 +261,9 @@ def macs0451_multiple_sources():
             cov += [30.]
         cov = np.array(cov)
 
-    nwalkers = 2000
-    nsteps = 10000
-    burn = 1000
+    nwalkers = 1000
+    nsteps = 8000
+    burn = 4000
 
     best_lens = [2730, 2005, 495, 0.2, 179.1, 17.2, 6.6]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, sa=sa, pix_scale=pix_scale)
