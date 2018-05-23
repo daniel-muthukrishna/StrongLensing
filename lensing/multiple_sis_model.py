@@ -38,14 +38,16 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
             ys = np.median(y_src[name])
 
             # Assume gaussian surface brightness at (xs, ys)
-            X1 = pymc.Uniform('X1', -500000., 500000., value=xs)
-            Y1 = pymc.Uniform('Y1', -500000., 500000., value=ys)
+            X1 = pymc.Uniform('X1', -1.e99, 1.e99, value=xs)
+            Y1 = pymc.Uniform('Y1', -1.e99, 1.e99, value=ys)
             Q1 = pymc.Uniform('Q1', 0., 1., value=1.)
             P1 = pymc.Uniform('P1', -180., 180., value=0.)
             S1 = pymc.Uniform('N1', 0., 10000., value=6.)
             srcs = SBObjects.Gauss('', {'x': X1, 'y': Y1, 'q': Q1, 'pa': P1, 'sigma': S1})
 
-            image_plane = srcs.pixeval(x_src[name], y_src[name])
+            # Get Image plane
+            x_src_all, y_src_all = pylens.getDeflections(lenses, [x, y], d=d[name])
+            image_plane = srcs.pixeval(x_src_all, y_src_all)
             image_indexes_pred = np.where(image_plane > threshold)
             image_coords_pred = np.array([x[image_indexes_pred], y[image_indexes_pred]])
             num_pred_points = image_coords_pred.shape[1]
@@ -55,7 +57,7 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
             penalise_more_points_weight = (num_pred_points/num_obs_points)
 
             lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var()) * penalise_more_points_weight
-        print(sum(lnlike_dict.values())) #, [lens.b for lens in lenses])
+        # print(sum(lnlike_dict.values())) #, [lens.b for lens in lenses])
         return sum(lnlike_dict.values())
 
     # Run MCMC
@@ -180,7 +182,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
 
 def macs0451_multiple_sources():
-    fig_dir = os.path.join(ROOT_DIR, 'Figures/penalise_nozeropredsMACS0451_multiple_sis_model_log/')
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/penalise_nozeropredsMACS0451_multiple_sis_model_log')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
 
@@ -220,10 +222,10 @@ def macs0451_multiple_sources():
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     # Define overall lens SIE mass model
-    LX = pymc.Uniform('lx', 2600., 3800., value=3.29154942e+03)
-    LY = pymc.Uniform('ly', 2500., 3500., value=3.04014997e+03)
+    LX = pymc.Uniform('lx', 3100., 3500., value=3.29154942e+03)
+    LY = pymc.Uniform('ly', 2800., 3150., value=3.04014997e+03)
     LB = pymc.Uniform('lb', 100., 3000., value=2.97055148e+02)
-    LQ = pymc.Uniform('lq', 0.01, 1., value=1.00003790e-01)
+    LQ = pymc.Uniform('lq', 0.01, 1., value=4.00003790e-01)
     LP = pymc.Uniform('lp', -180., 180., value=2.22832253e+00)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     lenses = [lens]
@@ -239,9 +241,9 @@ def macs0451_multiple_sources():
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
-        slope = pymc.Uniform('slope', 0., 1000., value=1.41973341e+01)
+        slope = pymc.Uniform('slope', 0., 1000., value=0.)
         intercept = pymc.Uniform('intercept', -100., 1000., value=0)
-        # n = pymc.Uniform('n', 0., 12., value=4.)
+        # n = pymc.Uniform('n', 0., 10., value=4.)
         pars += [slope, intercept]
         cov += [5., 5.]
         cov = np.array(cov)
