@@ -51,13 +51,13 @@ def run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=100, ns
             image_indexes_pred = np.where(image_plane > threshold)
             image_coords_pred = np.array([x[image_indexes_pred], y[image_indexes_pred]])
             num_pred_points = image_coords_pred.shape[1]
-            num_obs_points = len(img_xobs[name])
-            if num_pred_points < num_obs_points:
-                num_pred_points = num_obs_points
+            num_obs_points = 10*len(img_xobs[name])
+            # if num_pred_points < num_obs_points:
+            #     num_pred_points = num_obs_points
             penalise_more_points_weight = (num_pred_points/num_obs_points)
 
-            lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var()) * penalise_more_points_weight
-        # print(sum(lnlike_dict.values())) #, [lens.b for lens in lenses])
+            lnlike_dict[name] = -0.5 * (x_src[name].var() + y_src[name].var()) * (1+penalise_more_points_weight)
+        print(sum(lnlike_dict.values()), num_pred_points, num_obs_points) #, [lens.b for lens in lenses])
         return sum(lnlike_dict.values())
 
     # Run MCMC
@@ -182,7 +182,7 @@ def plot_source_and_pred_lens_positions(pars, img_xobs, img_yobs, d, fig_dir, th
 
 
 def macs0451_multiple_sources():
-    fig_dir = os.path.join(ROOT_DIR, 'Figures/penalise_nozeropredsMACS0451_multiple_sis_model_log')
+    fig_dir = os.path.join(ROOT_DIR, 'Figures/penalise1MACS0451_multiple_sis_model_log')
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
 
@@ -222,11 +222,11 @@ def macs0451_multiple_sources():
     d['C'] = scale_einstein_radius(z_lens=z_lens, z_src=2.0)
 
     # Define overall lens SIE mass model
-    LX = pymc.Uniform('lx', 3100., 3500., value=3.29154942e+03)
-    LY = pymc.Uniform('ly', 2800., 3150., value=3.04014997e+03)
-    LB = pymc.Uniform('lb', 100., 3000., value=2.97055148e+02)
-    LQ = pymc.Uniform('lq', 0.01, 1., value=4.00003790e-01)
-    LP = pymc.Uniform('lp', -180., 180., value=2.22832253e+00)
+    LX = pymc.Uniform('lx', 3100., 3500., value=3.29213154e+03)
+    LY = pymc.Uniform('ly', 2850., 3150., value=3.04899548e+03)
+    LB = pymc.Uniform('lb', 100., 3000., value=2.56554040e+02)
+    LQ = pymc.Uniform('lq', 0.01, 1., value=1.24379589e-01)
+    LP = pymc.Uniform('lp', -180., 180., value=5.67806821e+00)
     lens = MassModels.SIE('', {'x': LX, 'y': LY, 'b': LB, 'q': LQ, 'pa': LP})
     lenses = [lens]
     pars = [LX, LY, LB, LQ, LP]
@@ -241,8 +241,8 @@ def macs0451_multiple_sources():
     flux_dependent_b = True
     if flux_dependent_b:
         # ------> b_sis = slope * flux ** 8 + intercept <-------- #
-        slope = pymc.Uniform('slope', 0., 1000., value=0.)
-        intercept = pymc.Uniform('intercept', -100., 1000., value=0)
+        slope = pymc.Uniform('slope', 0., 1000., value=1.53454884e+01)
+        intercept = pymc.Uniform('intercept', -100., 1000., value=-7.22002250e-02)
         # n = pymc.Uniform('n', 0., 10., value=4.)
         pars += [slope, intercept]
         cov += [5., 5.]
@@ -265,13 +265,13 @@ def macs0451_multiple_sources():
             cov += [30.]
         cov = np.array(cov)
 
-    nwalkers = 1000
-    nsteps = 8000
-    burn = 4000
+    nwalkers = 200
+    nsteps = 500
+    burn = 100
 
-    best_lens = [3.29154942e+03,   3.04014997e+03,   2.97055148e+02,
-                 1.00003790e-01,   2.22832253e+00,   1.41973341e+01,
-                 0.]
+    best_lens = [  3.29213154e+03,   3.04899548e+03,   2.56554040e+02,
+         1.24379589e-01,   5.67806821e+00,   1.53454884e+01,
+        -7.22002250e-02]
     # plot_source_and_pred_lens_positions(best_lens, img_xobs, img_yobs, d, fig_dir, threshold=0.01, plotimage=True, fits_file=fits_file, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, sa=sa, pix_scale=pix_scale)
 
     run_mcmc(img_xobs, img_yobs, fig_dir, d, lenses, pars, cov, nwalkers=nwalkers, nsteps=nsteps, burn=burn, fits_file=fits_file, img_name=img_name, mass_pos=masses_pos, flux_dependent_b=flux_dependent_b, masses_flux=masses_flux, threshold=0.01, sa=sa, pix_scale=pix_scale)
@@ -282,3 +282,60 @@ if __name__ == '__main__':
 
     plt.show()
 
+# ('lens einstein radius', 9.7010135098293517)
+# ('lens einstein radius', 31.123232742829785)
+# ('lens einstein radius', 20.692384547683861)
+# ('lens einstein radius', 5.8676553665962237)
+# ('lens einstein radius', 4.8245294436482187)
+# ('lens einstein radius', 8.3813361398254198)
+# ('lens einstein radius', 20.8288326555842)
+# ('lens einstein radius', 0.044410969011899837)
+# ('lens einstein radius', 3.0035829982694477)
+# ('lens einstein radius', 10.223676938654723)
+# ('lens einstein radius', 23.914806967376407)
+# ('lens einstein radius', 4.7236416718172345)
+# ('lens einstein radius', 40.30294487989763)
+# ('lens einstein radius', 17.700857442448438)
+# ('lens einstein radius', 7.0215981753773287)
+# ('lens einstein radius', 39.832384945140078)
+# ('lens einstein radius', 43.570368256933044)
+# ('lens einstein radius', 32.59093860703485)
+# ('lens einstein radius', 1.3280916087498631)
+# ('lens einstein radius', 16.561466504599888)
+# ('lens einstein radius', 17.409807756475612)
+# ('lens einstein radius', 16.547936065994946)
+# ('lens einstein radius', 19.043298494350157)
+# ('lens einstein radius', 13.52478772503275)
+# ('lens einstein radius', 23.025861155692617)
+# ('lens einstein radius', 23.798237735939018)
+# ('lens einstein radius', 23.660691360376013)
+# ('lens einstein radius', 5.6520755134669791)
+# ('lens einstein radius', 1.8384008772105862)
+# ('lens einstein radius', 19.538771227963167)
+# ('lens einstein radius', 7.4040121261717227)
+# ('lens einstein radius', 5.4133228194817944)
+# ('lens einstein radius', 4.3118191478825478)
+# ('lens einstein radius', 2.2513513904194489)
+# ('lens einstein radius', 3.8062605859042975)
+# ('lens einstein radius', 34.82185984251943)
+# ('lens einstein radius', 23.953325273447231)
+# ('lens einstein radius', 28.38132769759806)
+# ('lens einstein radius', 21.612806155764652)
+# ('lens einstein radius', 9.047705987286534)
+# ('lens einstein radius', 8.217404931141175)
+# ('lens einstein radius', 9.8390389824909121)
+# ('lens einstein radius', 3.9644451129475469)
+# ('lens einstein radius', 6.4925519630465844)
+# ('lens einstein radius', 32.548848133608679)
+# ('lens einstein radius', 12.126953760491178)
+# ('lens einstein radius', 15.439771303783884)
+# ('lens einstein radius', 23.18347313224303)
+# ('lens einstein radius', 24.310709150642417)
+# ('lens einstein radius', 10.164426691360866)
+# ('lens einstein radius', 19.312561778293507)
+# ('lens einstein radius', 11.792516569293539)
+# ('lens einstein radius', 27.337459249020956)
+# ('lens einstein radius', 0.26611678913053077)
+# ('lens einstein radius', 1.3002691415663299)
+# ('lens einstein radius', 12.417078379813411)
+# ('lens einstein radius', 7.7672147674176211)
